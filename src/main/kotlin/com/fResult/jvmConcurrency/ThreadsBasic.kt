@@ -1,5 +1,6 @@
 package com.fResult.com.fResult.jvmConcurrency
 
+import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
@@ -9,30 +10,49 @@ object ThreadsBasic {
   // Thread = data structure (maps to OS threads)
   // Runnable = piece of code to run
 
-  val takingTheBus = Runnable {
-    println("Getting in the bus")
-    (0..10).forEach {
-      println("${it * 10}% done")
-      Thread.sleep(0.3.seconds.toJavaDuration())
+  val takingTheBus =
+    Runnable {
+      println("Getting in the bus")
+      (0..10).forEach {
+        println("${it * 10}% done")
+        Thread.sleep(0.3.seconds.toJavaDuration())
+      }
+      println("Getting off the bus, I'm done")
     }
-    println("Getting off the bus, I'm done")
-  }
-
-  fun runThread() {
-    val thread = Thread(takingTheBus)
-    // thread is just data
-    thread.start() // the code runs independently
-  }
 
   fun runMultipleThreads() {
     val takingTheBus = Thread(takingTheBus)
-    val listeningPodcast = Thread(Runnable {
-      println("Personal development")
-      Thread.sleep(2.seconds.toJavaDuration())
-      println("I'm a new person now!")
-    })
+    val listeningPodcast =
+      thread(start = false) {
+        // same as Thread(Runnable { ... })
+        println("Personal development")
+        Thread.sleep(2.seconds.toJavaDuration())
+        println("I'm a new person now!")
+      } // also starts the thread!
+
+    // start the threads
     takingTheBus.start()
-    listeningPodcast.start()
+    listeningPodcast.start() // exception if we start thread multiple times
+
+    // join threads = block until they all finish
+    takingTheBus.join()
+    listeningPodcast.join()
+  }
+
+  // interruption
+  val scrollingSocialMedia =
+    thread(start = false) {
+      while (true) {
+        println("Scrolling my Social Media")
+        Thread.sleep(1.seconds.toJavaDuration())
+      }
+    }
+
+  fun demoInterruption() {
+    scrollingSocialMedia.start()
+    Thread.sleep(5.seconds.toJavaDuration())
+    scrollingSocialMedia.interrupt() // throws InterruptedException on that thread!
+    scrollingSocialMedia.join() // block forever! (unless we interrupt as above)
   }
 
   @JvmStatic
@@ -42,6 +62,7 @@ object ThreadsBasic {
     // Thread.sleep(1.seconds.toJavaDuration())
     // println("Hello from the main thread")
 
-    runMultipleThreads()
+    // runMultipleThreads()
+    demoInterruption()
   }
 }
