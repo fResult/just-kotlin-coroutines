@@ -1,5 +1,6 @@
 package com.fResult.com.fResult.jvmConcurrency
 
+import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
@@ -72,6 +73,18 @@ object ThreadsBasics {
         Thread.sleep(100)
       }
     }
+
+    // make a thread return a value = Future
+    val future =
+      executors.submit(
+        Callable { // this will be run on one of the threads
+          println("Computing the meaning of life")
+          Thread.sleep(3000)
+          42
+        },
+      )
+
+    println("The meaning of life is ${future.get()}") // get() block the calling thread until the future is done
   }
 
   @JvmStatic
