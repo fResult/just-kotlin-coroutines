@@ -43,15 +43,21 @@ object ThreadsBasic {
   val scrollingSocialMedia =
     thread(start = false) {
       while (true) {
-        println("Scrolling my Social Media")
-        Thread.sleep(1.seconds.toJavaDuration())
+        try {
+          println("Scrolling my Social Media")
+          Thread.sleep(1.seconds.toJavaDuration())
+        } catch (e: InterruptedException) {
+          println("Oh! I scrolled too much, time to stop")
+          return@thread // non-local return
+        }
       }
     }
 
+  @Suppress("ktlint:standard:max-line-length")
   fun demoInterruption() {
     scrollingSocialMedia.start()
     Thread.sleep(5.seconds.toJavaDuration())
-    scrollingSocialMedia.interrupt() // throws InterruptedException on that thread!
+    scrollingSocialMedia.interrupt() // throws InterruptedException on that thread = crashing the thread
     scrollingSocialMedia.join() // block forever! (unless we interrupt as above)
   }
 
