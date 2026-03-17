@@ -1,10 +1,11 @@
 package com.fResult.com.fResult.jvmConcurrency
 
+import java.util.concurrent.Executors
 import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
-object ThreadsBasic {
+object ThreadsBasics {
   // Thread = independent unit of execution
 
   // Thread = data structure (maps to OS threads)
@@ -61,6 +62,18 @@ object ThreadsBasic {
     scrollingSocialMedia.join() // block forever! (unless we interrupt as above)
   }
 
+  // executors
+  fun demoExecutorsAndFutures() {
+    // thread pools
+    val executors = Executors.newFixedThreadPool(8)
+    executors.submit {
+      (1..100).forEach { n ->
+        println("Counting to $n")
+        Thread.sleep(100)
+      }
+    }
+  }
+
   @JvmStatic
   fun main(args: Array<String>) {
     // main thread
@@ -69,6 +82,7 @@ object ThreadsBasic {
     // println("Hello from the main thread")
 
     // runMultipleThreads()
-    demoInterruption()
+    // demoInterruption()
+    demoExecutorsAndFutures()
   }
 }
