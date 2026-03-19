@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:max-line-length")
+
 package com.fResult.com.fResult.jvmConcurrency
 
 import java.util.concurrent.Callable
@@ -55,7 +57,6 @@ object ThreadsBasics {
       }
     }
 
-  @Suppress("ktlint:standard:max-line-length")
   fun demoInterruption() {
     scrollingSocialMedia.start()
     Thread.sleep(5.seconds.toJavaDuration())
@@ -77,7 +78,8 @@ object ThreadsBasics {
     // make a thread return a value = Future
     val future =
       executors.submit(
-        Callable { // this will be run on one of the threads
+        Callable {
+          // this will be run on one of the threads
           println("Computing the meaning of life")
           Thread.sleep(3000)
           42
@@ -85,6 +87,10 @@ object ThreadsBasics {
       )
 
     println("The meaning of life is ${future.get()}") // get() block the calling thread until the future is done
+    // similar to join() on the thread
+
+    // shut down an Executor -> call it explicitly
+    executors.shutdown() // wait for all tasks to be done, no new tasks may be submitted
   }
 
   @JvmStatic
