@@ -1,7 +1,7 @@
 package com.fResult.com.fResult.jvmConcurrency
 
 import java.util.concurrent.locks.ReentrantLock
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
@@ -56,9 +56,32 @@ object ThreadsSync {
     println("Coffee machine has issued $coffeeMachine cups of coffee")
   }
 
+  fun developerAndMaintenance() {
+    val developers = (1..3000).map { Thread(syncDeveloper(it)) }
+    developers.forEach { it.start() }
+
+    // maintainer
+    val maintainer =
+      thread {
+//      Thread.sleep(900.milliseconds.toJavaDuration())
+        coffeeMachineLock.lock()
+        // run some maintenance
+        println("Maintenance in progress. Please wait...")
+        Thread.sleep(2.seconds.toJavaDuration())
+        println("Maintenance complete!!")
+        coffeeMachineLock.unlock() // unblocks the rest of the developer
+      }
+
+    developers.forEach { it.join() }
+    maintainer.join()
+
+    println("Coffee machine has issued $coffeeMachine cups of coffee") // 3000
+  }
+
   @JvmStatic
   fun main(args: Array<String>) {
     // developerWithRaceCondition(::developer)
-    developerWithRaceCondition(::syncDeveloper)
+    // developerWithRaceCondition(::syncDeveloper)
+    developerAndMaintenance()
   }
 }
