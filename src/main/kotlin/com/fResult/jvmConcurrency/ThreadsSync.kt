@@ -78,10 +78,46 @@ object ThreadsSync {
     println("Coffee machine has issued $coffeeMachine cups of coffee") // 3000
   }
 
+  // deadlock
+  var userStories = 0
+  var estimation = 0
+  val userStoriesLock = ReentrantLock()
+  val estimationLock = ReentrantLock()
+
+  fun projectManager() =
+    Thread {
+      println("I'm a PM, I need an estimation to proceed with user stories")
+      estimationLock.lock()
+      Thread.sleep(1.seconds.toJavaDuration())
+      userStoriesLock.lock()
+      userStories = 4
+      println("I'm the PM, user stories are completed")
+      userStoriesLock.unlock()
+      estimationLock.unlock()
+    }
+
+  fun developer() =
+    Thread {
+      println("I'm a developer, I need user stories to make an estimation")
+      userStoriesLock.lock()
+      Thread.sleep(1.seconds.toJavaDuration())
+      estimationLock.lock()
+      estimation = 15
+      println("I'm the developer, estimation is done")
+      userStoriesLock.unlock()
+      estimationLock.unlock()
+    }
+
+  fun demoDeadlock() {
+    projectManager().start()
+    developer().start()
+  }
+
   @JvmStatic
   fun main(args: Array<String>) {
     // developerWithRaceCondition(::developer)
     // developerWithRaceCondition(::syncDeveloper)
-    developerAndMaintenance()
+    // developerAndMaintenance()
+    demoDeadlock()
   }
 }
