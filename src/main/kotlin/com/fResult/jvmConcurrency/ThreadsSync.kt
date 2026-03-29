@@ -113,11 +113,54 @@ object ThreadsSync {
     developer().start()
   }
 
+  // livelock = multiple threads DO WORK, but dont make any progress
+  data class Friend(
+    val name: String,
+  ) {
+    var side = "right"
+    val lock = ReentrantLock()
+
+    fun bow(other: Friend) {
+      println("$name: I'm bowing to my friend ${other.name}")
+      other.rise(this)
+      println("$name: my friend ${other.name} has risen")
+      other.pass(this)
+      pass(other)
+    }
+
+    fun rise(other: Friend) {
+      println("$name: I'm rising from my friend ${other.name}")
+    }
+
+    fun switchSide() {
+      lock.lock()
+      side = if (side == "right") "left" else "right"
+      lock.unlock()
+    }
+
+    fun pass(other: Friend) {
+      while (side == other.side) {
+        println("Oh, $name: ${other.name}, please go first... ")
+        switchSide()
+        bow(other)
+      }
+    }
+  }
+
+  fun demoLiveLock() {
+    val jacques = Friend("Jacques")
+    val pierre = Friend("Pierre")
+
+    Thread { jacques.bow(pierre) }.start()
+    Thread { pierre.bow(jacques) }.start()
+  }
+
   @JvmStatic
   fun main(args: Array<String>) {
     // developerWithRaceCondition(::developer)
     // developerWithRaceCondition(::syncDeveloper)
     // developerAndMaintenance()
-    demoDeadlock()
+    // demoDeadlock()
+    demoLiveLock()
   }
 }
