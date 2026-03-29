@@ -1,5 +1,6 @@
 package com.fResult.com.fResult.jvmConcurrency
 
+import java.util.concurrent.Executors
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
@@ -44,9 +45,33 @@ object VirtualThreads {
     println("all virtual threads done")
   }
 
+  // OS threads? as many as CPU cores you have
+  fun demoVirtualExecutor() {
+    // val executor = Executors.newVirtualThreadPerTaskExecutor()
+
+    val factory = Thread.ofVirtual().name("fResult-", 0).factory()
+    val executor = Executors.newThreadPerTaskExecutor(factory)
+    val futures =
+      (1..1_000_000).map { _ ->
+        executor.submit {
+          while (true) {
+            Thread.sleep(Random.nextLong(1000))
+            println("[${Thread.currentThread().name}] I'm a task running on a virtual thread")
+          }
+        }
+      }
+
+    Thread.sleep(7.seconds.toJavaDuration())
+    println("all virtual threads done")
+  }
+
+  fun threadWhichNeverYields() {
+  }
+
   @JvmStatic
   fun main(args: Array<String>) {
     // indefinitely()
-    demoVirtualThreadFactory()
+    // demoVirtualThreadFactory()
+    demoVirtualExecutor()
   }
 }
