@@ -65,13 +65,42 @@ object VirtualThreads {
     println("all virtual threads done")
   }
 
-  fun threadWhichNeverYields() {
+  fun threadWhichNeverYields() =
+    Runnable {
+      println("I'm a virtual thread that will NEVER block")
+      while (true) {
+        // do nothing
+      }
+    }
+
+  fun threadWhichWantsToRun() =
+    Runnable {
+      println("I'd like to run. If this prints, then I'm successful")
+    }
+
+  fun demoCooperativeFailure() {
+    val factory = Thread.ofVirtual().name("mini-thread-", 0).factory()
+    val executor = Executors.newThreadPerTaskExecutor(factory)
+
+    executor.submit(threadWhichNeverYields())
+    executor.submit(threadWhichWantsToRun())
+
+    Thread.sleep(5.seconds.toJavaDuration())
+    executor.shutdown()
+    println("all virtual threads done")
   }
 
   @JvmStatic
   fun main(args: Array<String>) {
     // indefinitely()
     // demoVirtualThreadFactory()
-    demoVirtualExecutor()
+    // demoVirtualExecutor()
+
+    /*
+     * Test by VM Option `-Djdk.virtualThreadScheduler.maxPoolSize=1` and without it
+     * -Djdk.virtualThreadScheduler.maxPoolSize=1` and without it - max number of OS threads on the JVM
+     * -Djdk.virtualThreadScheduler.pararellism=2` - number of OS threads / core
+     */
+    demoCooperativeFailure()
   }
 }
