@@ -37,8 +37,24 @@ object SuspendFunctions {
     LOGGER.info("This prints AFTER resuming the coroutine: $resumedComputation")
   }
 
+  // CPS - continuation passing style
+  // suspend functions compile to functions with Continuation as their last argument
+
+  // suspend function, values (lambdas)
+  val suspendLambda: suspend (Int) -> Int = { it + 1 }
+  // (Int) -> Int and `suspend` (Int) -> Int are DIFFERENT TYPES
+
+  val increment: suspend Int.() -> Int = { this + 1 }
+
+  suspend fun demoLambda() {
+    LOGGER.info("Suspend call: ${suspendLambda(2)}")
+    val four = 3.increment()
+    LOGGER.info("Suspend lambda with receiver call: ${increment(3)}")
+  }
+
   // TODO: why does it not work with suspend fun main in the object?
-  // @JvmStatic
+  // @JvmStatic // public static void main(String[] args, Continuation) - what Kotlin compiles to
+  // // public static void main(String[]) - for the JVM
   // suspend fun main(args: Array<String>) {
   //   takeTheBus()
   // }
@@ -46,5 +62,6 @@ object SuspendFunctions {
 
 suspend fun main(args: Array<String>) {
   // SuspendFunctions.takeTheBus()
-  SuspendFunctions.demoSuspendedCoroutine()
+  // SuspendFunctions.demoSuspendedCoroutine()
+  SuspendFunctions.demoLambda()
 }
