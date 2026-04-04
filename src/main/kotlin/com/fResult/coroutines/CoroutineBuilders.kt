@@ -6,6 +6,7 @@ import kotlin.time.toJavaDuration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.delay
@@ -15,15 +16,15 @@ object CoroutineBuilders {
   private val LOGGER = LoggerFactory.getLogger(this::class.java)
 
   suspend fun developer(idx: Int) {
-    LOGGER.info("[dev $idx] I'm a developer. I need coffee.")
+    developerNeedCoffee(idx)
     delay(Random.nextLong(1000).milliseconds.toJavaDuration()) // can suspend the coroutine
-    LOGGER.info("[dev $idx] I got coffee, let's get coding!")
+    developerGotCoffee(idx)
   }
 
   suspend fun projectManager() {
-    LOGGER.info("[PM] I'm a PM. I need to check the devs' progress.")
+    pmCheckProgress()
     delay(Random.nextLong(1000).milliseconds.toJavaDuration()) // can suspend the coroutine
-    LOGGER.info("[PM] I checked progress, let's grab lunch")
+    pmFinishedCheckingProgress()
   }
 
   fun createDeveloperRoutine(idx: Int): suspend CoroutineScope.() -> Unit = { developer(idx) }
@@ -83,12 +84,62 @@ object CoroutineBuilders {
     timeToGoHomeAt("7PM")
   }
 
+  // async - return a value out of a coroutine
+  suspend fun developerCoding(idx: Int): String {
+    developerNeedCoffee(idx)
+    delay(Random.nextLong(1000).milliseconds.toJavaDuration()) // can suspend the coroutine
+    developerGotCoffee(idx)
+
+    return """
+      fun main() { println("This is KOTLIN!") }
+      """.trimIndent()
+  }
+
+  suspend fun projectManagerEstimating(): String {
+    pmCheckProgress()
+    delay(Random.nextLong(1000).milliseconds.toJavaDuration()) // can suspend the coroutine
+    pmFinishedCheckingProgress()
+
+    return "12 Hours"
+  }
+
+  data class Feature(
+    val code: String,
+    val estimation: String,
+  )
+
+  suspend fun startupValues() {
+    timeToStartAt("9AM")
+    val feature =
+      coroutineScope {
+        val deferredCode = async { developerCoding(42) }
+        val deferredEstimation = async { projectManagerEstimating() }
+
+        val code = deferredCode.await() // semantically blocking
+        val estimation = deferredEstimation.await()
+
+        return@coroutineScope Feature(code, estimation)
+      }
+
+    LOGGER.info("It's 9PM, still going. We have the feature {}", feature)
+  }
+
   private fun timeToStartAt(time: String) = LOGGER.info("It's $time, time to start")
 
   private fun timeToGoHomeAt(time: String) = LOGGER.info("It's {}, time to go home", time)
+
+  private fun developerNeedCoffee(n: Int) = LOGGER.info("[dev $n], I'm a developer. I need coffee.")
+
+  private fun developerGotCoffee(n: Int) = LOGGER.info("[dev $n], I got coffee, let's get coding!")
+
+  private fun pmCheckProgress() = LOGGER.info("[PM] I'm a PM. I need to check the devs' progress.")
+
+  private fun pmFinishedCheckingProgress() =
+    LOGGER.info("[PM] I checked progress, let's grab lunch.")
 }
 
 suspend fun main() {
   // CoroutineBuilders.startup()
-  CoroutineBuilders.globalStartup()
+  // CoroutineBuilders.globalStartup()
+  CoroutineBuilders.startupValues()
 }
