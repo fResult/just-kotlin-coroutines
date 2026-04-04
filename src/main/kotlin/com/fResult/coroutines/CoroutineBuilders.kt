@@ -3,6 +3,7 @@ package com.fResult.com.fResult.coroutines
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.delay
@@ -23,17 +24,24 @@ object CoroutineBuilders {
     LOGGER.info("[PM] I checked progress, let's grab lunch")
   }
 
+  fun createDeveloperRoutine(idx: Int): suspend CoroutineScope.() -> Unit =
+    {
+      developer(idx)
+    }
+
   suspend fun startup() {
     LOGGER.info("It's 9AM, let's start")
     // COROUTINE SCOPE
     coroutineScope {
       // the ability to launch coroutines concurrently
       launch { developer(42) }
+      launch(block = createDeveloperRoutine(99))
+      (1..3).forEach { n -> launch(block = createDeveloperRoutine(n)) }
       launch { projectManager() }
-      // manages suspenlifecycle of coroutine ...
+      // manages suspend lifecycle of coroutine ...
     } // will (semantically) block until coroutines inside finish
 
-    LOGGER.info("It's 6AM, time to go home")
+    LOGGER.info("It's 6PM, time to go home")
   }
 }
 
