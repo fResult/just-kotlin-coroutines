@@ -11,20 +11,26 @@ import org.slf4j.LoggerFactory
 
 object StructuredConcurrency {
   private val LOGGER = LoggerFactory.getLogger(this::class.java)
+  private val URLS =
+    listOf(
+      "https://rockthejvm.com",
+      "https://coderprodigy.com",
+      "https://5tobrain.com",
+    )
 
-  suspend fun fetchHtml(url: String): String {
+  private suspend fun fetchHtml(url: String): String {
     LOGGER.info("Fetching page for $url...")
     delay(1.seconds)
     return URI.create(url).toURL().readText()
   }
 
-  suspend fun processData(data: String): String {
+  private suspend fun processData(data: String): String {
     println("Processing data...")
     delay(500.milliseconds)
-    return "Processed: ${data.split("\n").joinToString { it.trim() }.take(100)}"
+    return "Processed: ${data.split("\n").filter(::hasText).joinToString { it.trim() }.take(100)}"
   }
 
-  suspend fun fetchAndProcessData(vararg urls: String): String =
+  private suspend fun fetchAndProcessData(vararg urls: String): String =
     coroutineScope {
       // group of coroutines 1
       val deferredResults = urls.toList().map { url -> async { fetchHtml(url) } }
@@ -35,7 +41,7 @@ object StructuredConcurrency {
       // group of coroutine 2
       val deferredData =
         results.map { data ->
-          async { processData(data) }
+          async { "\t\t" + processData(data) }
         }
 
       // wait for all
@@ -43,32 +49,52 @@ object StructuredConcurrency {
     }
 
   // nested coroutine scopes
-  suspend fun fetchAndProcessDataNested(vararg urls: String) =
+  private suspend fun fetchAndProcessDataNested(vararg urls: String) =
     coroutineScope {
-      coroutineScope {
-        // first batch of coroutines
-      }
+      // first batch of coroutines
+      val htmls =
+        coroutineScope {
+          return@coroutineScope urls
+            .map { url ->
+              async { fetchHtml(url) }
+            }.awaitAll()
+        }
 
-      coroutineScope {
-        // batch #2 of coroutines
-      }
+      // second batch of coroutines
+      val results =
+        coroutineScope {
+          return@coroutineScope htmls
+            .map { html ->
+              async { "\t\t" + processData(html) }
+            }.awaitAll()
+        }
+
+      return@coroutineScope results.joinToString(separator = "\n")
     }
+
+  private fun hasText(str: CharSequence) = str.isNotEmpty()
 
   suspend fun demoCoroutineGroups() {
     LOGGER.info("Starting data fetching...")
 
     val result =
-      fetchAndProcessData(
-        "https://rockthejvm.com",
-        "https://coderprodigy.com",
-        "https://5tobrain.com",
-      )
+      fetchAndProcessData(*URLS.toTypedArray())
 
-    LOGGER.info("Final result: {}", result)
+    LOGGER.info("Final result:\n{}", result)
+  }
+
+  suspend fun demoCoroutineGroupNested() {
+    LOGGER.info("Starting data fetching (nested)...")
+
+    val result =
+      fetchAndProcessDataNested(*URLS.toTypedArray())
+
+    LOGGER.info("Final result (nested):\n{}", result)
   }
 }
 
 suspend fun main() {
   // println(StructuredConcurrency.fetchHtml("https://restcountries.com"))
-  StructuredConcurrency.demoCoroutineGroups()
+  // StructuredConcurrency.demoCoroutineGroups()
+  StructuredConcurrency.demoCoroutineGroupNested()
 }
