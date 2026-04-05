@@ -18,6 +18,15 @@ object StructuredConcurrency {
       "https://coderprodigy.com",
       "https://5tobrain.com",
     )
+  private val FRESULT_URIS_1 =
+    listOf(
+      "home",
+      "about",
+      "contact",
+      "blogs?tag=oop,functional-programming",
+      "blogs/tag=scala,kotlin",
+    )
+  private val FRESULT_URIS_2 = listOf("about", "privacy", "blogs", "products", "contact")
 
   private suspend fun fetchHtml(url: String): String {
     LOGGER.info("Fetching page for $url...")
@@ -105,11 +114,20 @@ object StructuredConcurrency {
    *       - fetchDataFromPage("rockthejvm.com/courses/coroutines")
    *    - aggregate the results
    *       - "Report for rockthejvm.com: $...."
+   *
+   * 2. Write a function to scrape MULTIPLE websites in parallel, then combine their data.
+   *    - for every website, fetch its pages
+   *    - then call `scrape` for every website with its pages
    */
   private suspend fun fetchDataFromPage(pageUrl: String): String {
     delay(Random.nextLong(1000).milliseconds) // simulate network latency
 
     return "Data from $pageUrl"
+  }
+
+  private suspend fun fetchPageUrlsFromSite(root: String): List<String> {
+    delay(Random.nextLong(1000).milliseconds)
+    return FRESULT_URIS_2
   }
 
   private suspend fun scrape(
@@ -137,18 +155,23 @@ object StructuredConcurrency {
       )
     }
 
-  suspend fun demoWebCrawler() {
-    val report =
-      scrape(
-        "https://fResult.com",
-        listOf(
-          "home",
-          "about",
-          "contact",
-          "blogs?tag=oop,functional-programming",
-          "blogs/tag=scala,kotlin",
-        ),
+  private suspend fun crawl(siteUrls: List<String>): String =
+    coroutineScope {
+      val siteResults =
+        siteUrls
+          .map { siteUrl ->
+            async { TODO() }
+          }.awaitAll()
+
+      siteResults.joinToString(
+        prefix = "FINAL CRAWLER REPORT:\n",
+        separator = "\n",
       )
+    }
+
+  suspend fun demoWebCrawler1() {
+    val report = scrape("https://fResult.com", FRESULT_URIS_1)
+
     LOGGER.info(report)
   }
 }
@@ -157,5 +180,5 @@ suspend fun main() {
   // println(StructuredConcurrency.fetchHtml("https://restcountries.com"))
   // StructuredConcurrency.demoCoroutineGroups()
   // StructuredConcurrency.demoCoroutineGroupNested()
-  StructuredConcurrency.demoWebCrawler()
+  StructuredConcurrency.demoWebCrawler1()
 }
