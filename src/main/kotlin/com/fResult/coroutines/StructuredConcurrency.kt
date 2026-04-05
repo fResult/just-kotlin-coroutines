@@ -42,6 +42,18 @@ object StructuredConcurrency {
       return@coroutineScope deferredData.awaitAll().joinToString(separator = "\n")
     }
 
+  // nested coroutine scopes
+  suspend fun fetchAndProcessDataNested(vararg urls: String) =
+    coroutineScope {
+      coroutineScope {
+        // first batch of coroutines
+      }
+
+      coroutineScope {
+        // batch #2 of coroutines
+      }
+    }
+
   suspend fun demoCoroutineGroups() {
     LOGGER.info("Starting data fetching...")
 
