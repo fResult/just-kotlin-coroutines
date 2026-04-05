@@ -106,24 +106,56 @@ object StructuredConcurrency {
    *    - aggregate the results
    *       - "Report for rockthejvm.com: $...."
    */
+  private suspend fun fetchDataFromPage(pageUrl: String): String {
+    delay(Random.nextLong(1000).milliseconds) // simulate network latency
+
+    return "Data from $pageUrl"
+  }
+
   private suspend fun scrape(
     siteUrl: String,
     pageUris: List<String>,
   ): String =
     coroutineScope {
+      LOGGER.info("Starting scraping for $siteUrl...")
+
       val pageUrls = pageUris.map { pageUri -> "$siteUrl/$pageUri" }
-      TODO()
+      val pageResults =
+        pageUrls
+          .map { url ->
+            async {
+              LOGGER.info("Fetching page for {}...", url)
+              return@async "\t\t" + fetchDataFromPage(url)
+            }
+          }.awaitAll()
+
+      LOGGER.info("Scraping site $siteUrl complete")
+
+      return@coroutineScope pageResults.joinToString(
+        prefix = "Report for $siteUrl:\n",
+        separator = "\n",
+      )
     }
 
-  suspend fun fetchDataFromPage(pageUrl: String): String {
-    delay(Random.nextLong(1000).milliseconds) // simulate network latency
-
-    return "Data from $pageUrl"
+  suspend fun demoWebCrawler() {
+    val report =
+      scrape(
+        "https://fResult.com",
+        listOf(
+          "home",
+          "about",
+          "contact",
+          "blogs?tag=oop,functional-programming",
+          "blogs/tag=scala,kotlin",
+        ),
+      )
+    LOGGER.info(report)
   }
 }
 
 suspend fun main() {
   // println(StructuredConcurrency.fetchHtml("https://restcountries.com"))
   // StructuredConcurrency.demoCoroutineGroups()
-  StructuredConcurrency.demoCoroutineGroupNested()
+  // StructuredConcurrency.demoCoroutineGroupNested()
+  StructuredConcurrency.demoWebCrawler()
 }
