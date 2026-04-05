@@ -1,6 +1,7 @@
 package com.fResult.com.fResult.coroutines
 
 import java.net.URI
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.async
@@ -90,6 +91,34 @@ object StructuredConcurrency {
       fetchAndProcessDataNested(*URLS.toTypedArray())
 
     LOGGER.info("Final result (nested):\n{}", result)
+  }
+
+  /*
+   * ================================================ *
+   * ============ Exercise - web crawler ============ *
+   * ================================================ *
+   *
+   * 1. Implement `scrape` function which fetches all the pages for a website
+   *      scrape("rockthejvm.com", ["courses/kotlin", "courses/coroutines"]
+   *    - call `fetchDataFromPage` on all pages in the list in parallel
+   *       - fetchDataFromPage("rockthejvm.com/courses/kotlin")
+   *       - fetchDataFromPage("rockthejvm.com/courses/coroutines")
+   *    - aggregate the results
+   *       - "Report for rockthejvm.com: $...."
+   */
+  private suspend fun scrape(
+    siteUrl: String,
+    pageUris: List<String>,
+  ): String =
+    coroutineScope {
+      val pageUrls = pageUris.map { pageUri -> "$siteUrl/$pageUri" }
+      TODO()
+    }
+
+  suspend fun fetchDataFromPage(pageUrl: String): String {
+    delay(Random.nextLong(1000).milliseconds) // simulate network latency
+
+    return "Data from $pageUrl"
   }
 }
 
