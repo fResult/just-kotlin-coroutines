@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import org.slf4j.LoggerFactory
 
 object CooperativeScheduling {
@@ -28,13 +29,26 @@ object CooperativeScheduling {
     LOGGER.info("I'm done with coffee, maybe now I can code.")
   }
 
+  private suspend fun almostGreedyDeveloper() {
+    LOGGER.info("I want all the coffee!!")
+
+    while (System.currentTimeMillis() % 10000 != 0L) {
+      // delay(1.milliseconds) // suspension point
+      yield() // fundamental suspension point
+    }
+
+    LOGGER.info("I'm done with coffee, maybe now I can code.")
+  }
+
   suspend fun startup() {
     LOGGER.info("It's 9AM, let's get going")
 
     val singleThread = Dispatchers.Default.limitedParallelism(1)
     coroutineScope {
       launch(context = singleThread) { developer(42) }
-      launch(context = singleThread) { greedyDeveloper() }
+      // launch(context = singleThread) { greedyDeveloper() }
+      launch(context = singleThread) { almostGreedyDeveloper() }
+      launch(context = singleThread) { developer(99) }
     }
 
     LOGGER.info("It's 1AM in the morning, let's go to sleep")
