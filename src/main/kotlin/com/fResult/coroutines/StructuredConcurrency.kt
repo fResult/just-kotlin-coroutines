@@ -12,13 +12,15 @@ import org.slf4j.LoggerFactory
 
 object StructuredConcurrency {
   private val LOGGER = LoggerFactory.getLogger(this::class.java)
-  private val URLS =
+  private val DANIEL_URLS =
     listOf(
       "https://rockthejvm.com",
       "https://coderprodigy.com",
       "https://5tobrain.com",
     )
-  private val FRESULT_URIS_1 =
+  private val DANIEL_URIS = listOf("about", "privacy", "blogs", "products", "contact")
+
+  private val FRESULT_URIS =
     listOf(
       "home",
       "about",
@@ -26,7 +28,6 @@ object StructuredConcurrency {
       "blogs?tag=oop,functional-programming",
       "blogs/tag=scala,kotlin",
     )
-  private val FRESULT_URIS_2 = listOf("about", "privacy", "blogs", "products", "contact")
 
   private suspend fun fetchHtml(url: String): String {
     LOGGER.info("Fetching page for $url...")
@@ -88,7 +89,7 @@ object StructuredConcurrency {
     LOGGER.info("Starting data fetching...")
 
     val result =
-      fetchAndProcessData(*URLS.toTypedArray())
+      fetchAndProcessData(*DANIEL_URLS.toTypedArray())
 
     LOGGER.info("Final result:\n{}", result)
   }
@@ -97,7 +98,7 @@ object StructuredConcurrency {
     LOGGER.info("Starting data fetching (nested)...")
 
     val result =
-      fetchAndProcessDataNested(*URLS.toTypedArray())
+      fetchAndProcessDataNested(*DANIEL_URLS.toTypedArray())
 
     LOGGER.info("Final result (nested):\n{}", result)
   }
@@ -127,7 +128,7 @@ object StructuredConcurrency {
 
   private suspend fun fetchPageUrlsFromSite(root: String): List<String> {
     delay(Random.nextLong(1000).milliseconds)
-    return FRESULT_URIS_2
+    return DANIEL_URIS
   }
 
   private suspend fun scrape(
@@ -142,37 +143,50 @@ object StructuredConcurrency {
         pageUrls
           .map { url ->
             async {
-              LOGGER.info("Fetching page for {}...", url)
-              return@async "\t\t" + fetchDataFromPage(url)
+              LOGGER.info("- Fetching page for {}...", url)
+              return@async "\t\t- " + fetchDataFromPage(url)
             }
           }.awaitAll()
 
       LOGGER.info("Scraping site $siteUrl complete")
 
       return@coroutineScope pageResults.joinToString(
-        prefix = "Report for $siteUrl:\n",
+        prefix = "\tReport for $siteUrl:\n",
         separator = "\n",
       )
     }
 
   private suspend fun crawl(siteUrls: List<String>): String =
     coroutineScope {
+      LOGGER.info("Starting crawling...")
+
       val siteResults =
         siteUrls
           .map { siteUrl ->
-            async { TODO() }
-          }.awaitAll()
+            async {
+              val pageUrls = fetchPageUrlsFromSite(siteUrl)
 
-      siteResults.joinToString(
+              return@async scrape(siteUrl, pageUrls)
+            }
+          }.awaitAll()
+      LOGGER.info("Crawling done")
+
+      return@coroutineScope siteResults.joinToString(
         prefix = "FINAL CRAWLER REPORT:\n",
         separator = "\n",
       )
     }
 
-  suspend fun demoWebCrawler1() {
-    val report = scrape("https://fResult.com", FRESULT_URIS_1)
+  suspend fun demoWebScraping() {
+    val report = scrape("https://fResult.com", FRESULT_URIS)
 
     LOGGER.info(report)
+  }
+
+  suspend fun demoWebCrawling() {
+    val crawlingReport = crawl(DANIEL_URLS)
+
+    LOGGER.info(crawlingReport)
   }
 }
 
@@ -180,5 +194,6 @@ suspend fun main() {
   // println(StructuredConcurrency.fetchHtml("https://restcountries.com"))
   // StructuredConcurrency.demoCoroutineGroups()
   // StructuredConcurrency.demoCoroutineGroupNested()
-  StructuredConcurrency.demoWebCrawler1()
+  // StructuredConcurrency.demoWebScraping()
+  StructuredConcurrency.demoWebCrawling()
 }
