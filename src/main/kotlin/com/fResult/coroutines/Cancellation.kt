@@ -7,6 +7,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import org.slf4j.LoggerFactory
 
 object Cancellation {
@@ -40,11 +41,33 @@ object Cancellation {
     }
   }
 
+  @Suppress("ktlint:standard:max-line-length")
+  private suspend fun developerWithTry(idx: Int) {
+    LOGGER.info("[dev $idx] I'm a developer, I'm working on a feature")
+    while (true) {
+      try {
+        delay(500.milliseconds) // this point is where the coroutine gets canceled - will throw the CancellationException
+        LOGGER.info("[dev $idx] developing...")
+      } catch (ex: CancellationException) {
+        LOGGER.info("[dev $idx] Oh no! I'm being fired!")
+        // VERY IMPORTANT - continue to throw the cancellation exception
+        // otherwise you'll ignore the cancellation - uncancelable
+        // throw ex
+        // CancellationException caught by the continuation -> will terminate the coroutine
+      } finally {
+        LOGGER.info("[dev $idx] I'm done with this startup")
+      }
+      yield()
+    }
+  }
+
   suspend fun startup() {
     LOGGER.info("9AM, a beautiful day to change the world")
     coroutineScope {
-      val goodDeveloperJob = launch { developer(3) }
-      val lazyDeveloperJob = launch { developer(42) }
+      // val goodDeveloperJob = launch { developer(3) }
+      val goodDeveloperJob = launch { developerWithTry(3) }
+      // val lazyDeveloperJob = launch { developer(42) }
+      val lazyDeveloperJob = launch { developerWithTry(42) }
 
       launch { ceo(lazyDeveloperJob) }
     }
