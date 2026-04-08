@@ -40,6 +40,23 @@ object CooperativeScheduling {
     LOGGER.info("I'm done with coffee, maybe now I can code.")
   }
 
+  // functions that can suspend a coroutine
+  // - Cooperative Methods
+  //   - yield()
+  //   - delay(...)
+  // - Semantically Blocking Methods
+  //   - Deferred<T>#await()
+  //   - Collection<Deferred<T>>#awaitAll()
+  //   - Job#join()
+  // - Lowest Level Suspend Functions
+  //   - suspendCancellableCoroutine
+  //   - suspendCoroutine
+  //   - suspendCoroutineUninterceptedOrReturn
+
+  // Lessons
+  // - never run heavy coroutine CPU-bound tasks without any suspension points
+  //   - like yielding, as it will starve other coroutines on the same thread
+
   suspend fun startup() {
     LOGGER.info("It's 9AM, let's get going")
 
