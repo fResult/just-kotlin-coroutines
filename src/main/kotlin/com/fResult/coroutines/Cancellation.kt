@@ -41,6 +41,7 @@ object Cancellation {
     }
   }
 
+  // 1. handle the cancellation exception
   @Suppress("ktlint:standard:max-line-length")
   private suspend fun developerWithTry(idx: Int) {
     LOGGER.info("[dev $idx] I'm a developer, I'm working on a feature")
@@ -73,8 +74,42 @@ object Cancellation {
     }
     LOGGER.info("1AM in the morning, are we still having fun?")
   }
+
+  // 2. resources
+  private class Laptop(
+    val name: String,
+  ) : AutoCloseable {
+    init {
+      LOGGER.info("Providing the laptop'$name'")
+    }
+
+    override fun close() {
+      LOGGER.info("Shutting down the laptop '$name'")
+    }
+  }
+
+  private suspend fun developerAtWork(idx: Int) {
+    Laptop("The AVENGER").use { laptop ->
+      LOGGER.info("[dev $idx] I'm a developer, I'm working on '${laptop.name}' on a feature")
+      while (true) {
+        delay(500.milliseconds)
+        LOGGER.info("[dev $idx] developing...")
+      }
+    }
+  }
+
+  suspend fun startupResource() {
+    LOGGER.info("9AM, a beautiful day to change the world")
+    coroutineScope {
+      val developerJob = launch { developerAtWork(10) }
+
+      launch { ceo(developerJob) }
+    }
+    LOGGER.info("1AM in the morning, are we still having fun?")
+  }
 }
 
 suspend fun main() {
-  Cancellation.startup()
+  // Cancellation.startup()
+  Cancellation.startupResource()
 }
