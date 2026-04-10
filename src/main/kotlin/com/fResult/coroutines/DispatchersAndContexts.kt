@@ -1,14 +1,20 @@
 package com.fResult.com.fResult.coroutines
 
+import kotlin.coroutines.CoroutineContext
+import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newSingleThreadContext
 import org.slf4j.LoggerFactory
 
+@Suppress("ktlint:standard:no-consecutive-comments")
 object DispatchersAndContexts {
   private val LOGGER = LoggerFactory.getLogger(javaClass)
 
@@ -77,8 +83,42 @@ object DispatchersAndContexts {
    *   - good for starting cheap coroutines, when you don't care where they're resumed
    *     (shouldn't use it in 95% of the code)
    */
+
+  // contexts
+  val context: CoroutineContext = basicDispatcher
+  val coroutineName: CoroutineContext = CoroutineName("myCoroutine")
+  val combinedContext = context + coroutineName
+  val nameExtracted = combinedContext[CoroutineName] // CoroutineName("myCoroutine")
+  /*
+   * You can think of the coroutine context is like Map
+   * {
+   *   CoroutineName -> CoroutineName("myCoroutine")
+   *   CoroutineDispatcher -> basicDispatcher
+   * }
+   */
+
+  private suspend fun developer() {
+    // coroutineContext is available from all suspend functions
+    val coroutineName = currentCoroutineContext()[CoroutineName]?.name ?: "unknown"
+    @Suppress("ktlint:standard:max-line-length")
+    LOGGER.info(
+      "[dev $coroutineName] I'm a developer: $coroutineName. I need to write code or I'll die.",
+    )
+    delay(Random.nextLong(1000).milliseconds)
+    LOGGER.info("[dev $coroutineName] I wrote code today.")
+  }
+
+  suspend fun startup() {
+    LOGGER.info("9AM, let's start")
+    coroutineScope {
+      launch(context = CoroutineName("Alice")) { developer() }
+      launch(context = CoroutineName("Bob")) { developer() }
+    }
+    LOGGER.info("6PM, we'll never make it")
+  }
 }
 
 suspend fun main() {
-  DispatchersAndContexts.demoDispatcher()
+  // DispatchersAndContexts.demoDispatcher()
+  DispatchersAndContexts.startup()
 }
