@@ -43,6 +43,25 @@ object DispatchersAndContexts {
       }
     } // coroutines on a single threaded dispatcher will run sequentially
   }
+
+  /*
+   * Dispatcher types
+   * - Default - thread pool between 2 and N_CORES
+   *   - use this for regular coroutines
+   *   - can configure `kotlinx.coroutines.scheduler.core.pool.size` as JVM argument
+   *   - can configure `kotlinx.coroutines.scheduler.max.pool.size` as JVM argument
+   * - IO - used for blocking actions (UI tasks)
+   *   - e.g., on Android or other forms of blocking operation waiting for reading from db, for a socket
+   *   - more complex design
+   *   - thread pool max(N_CORES, 64)
+   * - Main - for the main app, usually single-threaded
+   * - Unconfined - not bound by a certain thread pool
+   *   - runs a coroutine in the calling thread
+   *   - suspends at the first suspension point
+   *   - resumes on the thread that caused that suspension
+   *   - good for starting cheap coroutines, when you don't care where they're resumed
+   *     (shouldn't use it in 95% of the code)
+   */
 }
 
 suspend fun main() {
