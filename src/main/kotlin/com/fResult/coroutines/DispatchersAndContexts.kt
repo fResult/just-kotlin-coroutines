@@ -12,6 +12,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newSingleThreadContext
+import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 
 @Suppress("ktlint:standard:no-consecutive-comments")
@@ -102,7 +103,7 @@ object DispatchersAndContexts {
     val coroutineName = currentCoroutineContext()[CoroutineName]?.name ?: "unknown"
     @Suppress("ktlint:standard:max-line-length")
     LOGGER.info(
-      "[dev $coroutineName] I'm a developer: $coroutineName. I need to write code or I'll die.",
+      "[dev $coroutineName] I'm a developer. I need to write code or I'll die.",
     )
     delay(Random.nextLong(1000).milliseconds)
     LOGGER.info("[dev $coroutineName] I wrote code today.")
@@ -116,9 +117,32 @@ object DispatchersAndContexts {
     }
     LOGGER.info("6PM, we'll never make it")
   }
+
+  // contexts are inherited to child coroutines
+  suspend fun startupInheritance() {
+    LOGGER.info("9AM, let's start")
+    coroutineScope {
+      launch(context = CoroutineName("Team A")) {
+        // child coroutines will inherit the Team A name
+        launch { developer() }
+        launch { developer() }
+
+        // ... but may be overridden
+        launch (context = CoroutineName("Team lead")) { developer() }
+
+        // can override for multiple children
+        withContext(CoroutineName("All stars")) {
+          launch { developer() }
+          launch { developer() }
+        }
+      }
+    }
+    LOGGER.info("6PM, we'll never make it")
+  }
 }
 
 suspend fun main() {
   // DispatchersAndContexts.demoDispatcher()
-  DispatchersAndContexts.startup()
+  // DispatchersAndContexts.startup()
+  DispatchersAndContexts.startupInheritance()
 }
