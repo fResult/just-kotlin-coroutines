@@ -4,6 +4,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newSingleThreadContext
 import org.slf4j.LoggerFactory
@@ -42,6 +43,20 @@ object DispatchersAndContexts {
         LOGGER.info("... before the last one does.")
       }
     } // coroutines on a single threaded dispatcher will run sequentially
+
+    LOGGER.info("Demo unconfined dispatcher")
+    coroutineScope {
+      launch(Dispatchers.Unconfined) {
+        LOGGER.info("Unconfined - start") // will run on the calling thread
+        delay(500.milliseconds) // suspension point
+        LOGGER.info("Unconfined - resumed")
+      }
+      launch {
+        LOGGER.info("Regular - start")
+        delay(500.milliseconds) // suspension point
+        LOGGER.info("Regular - resumed")
+      }
+    }
   }
 
   /*
