@@ -2,8 +2,10 @@ package com.fResult.com.fResult.coroutines
 
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -107,9 +109,43 @@ object Cancellation {
     }
     LOGGER.info("1AM in the morning, are we still having fun?")
   }
+
+  // 3. cancelling a coroutine, cancels its children
+  // cancellation propagates to children
+  /*
+   * launch {
+   *   // coroutine 1
+   *   launch {
+   *     // coroutine 2, a child of coroutine 1
+   *   }
+   * }
+   */
+  @Suppress("ktlint:standard:no-consecutive-comments")
+  suspend fun startupTeam() {
+    LOGGER.info("9AM, a beautiful day to change the world")
+    coroutineScope {
+      val teamJob =
+        launch {
+          (1..10).forEach { n -> launch { developerAtWork(n) } }
+          // if someone cancels me here, all the coroutines above will get canceled
+
+          // I can cancel my own children
+          coroutineContext.cancelChildren()
+
+          // once a coroutine is canceled, it CANNOT create other coroutines
+          delay(2.seconds)
+          LOGGER.info("Trying to hack my way into the startup's budget")
+          (100..110).forEach { n -> launch { developerAtWork(n) } }
+        }
+
+      launch { ceo(teamJob) }
+    }
+    LOGGER.info("1AM in the morning, are we still having fun?")
+  }
 }
 
 suspend fun main() {
   // Cancellation.startup()
-  Cancellation.startupResource()
+  // Cancellation.startupResource()
+  Cancellation.startupTeam()
 }
