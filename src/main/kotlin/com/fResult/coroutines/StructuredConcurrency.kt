@@ -67,7 +67,7 @@ object StructuredConcurrency {
         coroutineScope {
           return@coroutineScope urls
             .map { url ->
-              async { fetchHtml(url) }
+              async { fetchHtml(url) } // a child of the calling coroutine
             }.awaitAll()
         }
 

@@ -128,7 +128,7 @@ object DispatchersAndContexts {
         launch { developer() }
 
         // ... but may be overridden
-        launch (context = CoroutineName("Team lead")) { developer() }
+        launch(context = CoroutineName("Team lead")) { developer() }
 
         // can override for multiple children
         withContext(CoroutineName("All stars")) {
@@ -139,10 +139,50 @@ object DispatchersAndContexts {
     }
     LOGGER.info("6PM, we'll never make it")
   }
+
+  /*
+   * - dispatcher
+   * - coroutine id
+   * - coroutine name
+   * - coroutine exception handler
+   * - job handler
+   * - your own values
+   * - thread local (for interacting with Java code using ThreadLocal)
+   */
+
+  private class TeamName(
+    val name: String,
+  ) : CoroutineContext.Element {
+    override val key: CoroutineContext.Key<*> = Key
+
+    companion object Key : CoroutineContext.Key<TeamName>
+  }
+
+  private suspend fun developerWithTeam() {
+    // coroutineContext is available from all suspend functions
+    val name = currentCoroutineContext()[CoroutineName]?.name ?: "unknown"
+    val teamName = currentCoroutineContext()[TeamName]?.name ?: "unknown"
+    @Suppress("ktlint:standard:max-line-length")
+    LOGGER.info(
+      "[dev $name] I'm a developer, working for $teamName. I need to write code or I'll die.",
+    )
+    delay(Random.nextLong(1000).milliseconds)
+    LOGGER.info("[dev $name] I wrote code today.")
+  }
+
+  suspend fun startupComplexContext() {
+    LOGGER.info("9AM, let's start")
+    coroutineScope {
+      launch(context = CoroutineName("Alice") + TeamName("Analytics")) { developerWithTeam() }
+      launch(context = CoroutineName("Bob") + TeamName("Frontend")) { developerWithTeam() }
+    }
+    LOGGER.info("6PM, we'll never make it")
+  }
 }
 
 suspend fun main() {
   // DispatchersAndContexts.demoDispatcher()
   // DispatchersAndContexts.startup()
-  DispatchersAndContexts.startupInheritance()
+  // DispatchersAndContexts.startupInheritance()
+  DispatchersAndContexts.startupComplexContext()
 }
