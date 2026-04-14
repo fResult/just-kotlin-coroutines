@@ -51,7 +51,7 @@ object Flows {
       }
     }
 
-  private fun Logger.infoOf(message: String): (Any) -> Unit =
+  private fun Logger.infoOf(message: String = "{}"): (Any) -> Unit =
     { any ->
       this.info(message, any)
     }
@@ -92,7 +92,7 @@ object Flows {
     productNameCaps.collect(LOGGER.infoOf("Product Name: {}"))
     filteredProducts.collect(LOGGER.infoOf("Product: {}"))
     LOGGER.info("Total inventory value: {}", totalInventoryValue())
-    scannedValue.collect(LOGGER.infoOf("Total inventory value: {}"))
+    scannedValue.collect(LOGGER.infoOf())
   }
 }
 
