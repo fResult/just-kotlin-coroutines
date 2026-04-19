@@ -4,14 +4,17 @@ import java.math.BigDecimal
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.retry
 import kotlinx.coroutines.flow.scan
@@ -131,8 +134,32 @@ object Flows {
   // combine multiple flows: merging, concatenating, zipping
   val mergedProductFlow = merge(productFlow, delayedProductFlow)
 
+  val concatenatedProductFlowV1 =
+    flow {
+      emitAll(productFlow)
+      emitAll(filteredProducts)
+    }
+
+  val concatenatedProductFlowV2 =
+    productFlow.onCompletion {
+      if (it != null) {
+        emitAll(filteredProducts)
+      }
+    }
+
   suspend fun demoMergedFlow() {
     mergedProductFlow.collect(LOGGER.infoOf("Product: {}"))
+  }
+
+  suspend fun demoConcatenatedFlow() {
+    concatenatedProductFlowV1.collect(LOGGER.infoOf("Product Lambda: {}"))
+    concatenatedProductFlowV2.collect(
+      object : FlowCollector<Product> {
+        override suspend fun emit(value: Product) {
+          LOGGER.infoOf("Product SAM: {}")(value)
+        }
+      },
+    )
   }
 }
 
@@ -140,5 +167,7 @@ suspend fun main() {
   // Flows.demoBuildFlow()
   // Flows.demoTransformers()
   // Flows.demoFlowWithException()
-  Flows.demoMergedFlow()
+  // Flows.demoMergedFlow()
+  Flows.demoConcatenatedFlow()
+  // Flows.demoZippedFlow()
 }
