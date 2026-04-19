@@ -1,14 +1,17 @@
 package com.fResult.com.fResult.advanced
 
 import java.math.BigDecimal
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.retry
 import kotlinx.coroutines.flow.scan
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -94,9 +97,32 @@ object Flows {
     LOGGER.info("Total inventory value: {}", totalInventoryValue())
     scannedValue.collect(LOGGER.infoOf())
   }
+
+  // handle exceptions
+  private val productFlowWithException =
+    flow {
+      emit(Product(1, "laptop", BigDecimal.valueOf(999.99)))
+      if (Random.nextBoolean()) {
+        throw RuntimeException("Network error, cannot fetch product")
+      }
+      emit(Product(2, "smartphone", BigDecimal.valueOf(1999.99)))
+      delay(300.milliseconds)
+      emit(Product(3, "tablet", BigDecimal.valueOf(799.99)))
+      emit(Product(4, "smartwatch", BigDecimal.valueOf(399.99)))
+    }.retry(retries = 1) { ex ->
+      ex is RuntimeException
+    }.catch { ex ->
+      LOGGER.warn("Caught error: {}", ex.message)
+      emit(Product(0, "Unknown", BigDecimal.ZERO)) // emit a fallback product
+    }
+
+  suspend fun demoFlowWithException() {
+    productFlowWithException.collect(LOGGER.infoOf("Product: {}"))
+  }
 }
 
 suspend fun main() {
   // Flows.demoBuildFlow()
-  Flows.demoTransformers()
+  // Flows.demoTransformers()
+  Flows.demoFlowWithException()
 }
