@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.retry
 import kotlinx.coroutines.flow.scan
 import org.slf4j.Logger
@@ -119,10 +121,24 @@ object Flows {
   suspend fun demoFlowWithException() {
     productFlowWithException.collect(LOGGER.infoOf("Product: {}"))
   }
+
+  // side effects on emission
+  val productFlowWithSideEffects =
+    delayedProductFlow.onEach {
+      LOGGER.info("generated product: {}", it)
+    }
+
+  // combine multiple flows: merging, concatenating, zipping
+  val mergedProductFlow = merge(productFlow, delayedProductFlow)
+
+  suspend fun demoMergedFlow() {
+    mergedProductFlow.collect(LOGGER.infoOf("Product: {}"))
+  }
 }
 
 suspend fun main() {
   // Flows.demoBuildFlow()
   // Flows.demoTransformers()
-  Flows.demoFlowWithException()
+  // Flows.demoFlowWithException()
+  Flows.demoMergedFlow()
 }
