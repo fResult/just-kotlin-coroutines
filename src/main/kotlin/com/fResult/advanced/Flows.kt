@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.retry
 import kotlinx.coroutines.flow.scan
+import kotlinx.coroutines.flow.zip
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -147,6 +148,25 @@ object Flows {
       }
     }
 
+  val orderFlow =
+    flow {
+      (1..4).forEach {
+
+        delay(600.milliseconds)
+        emit(it)
+      }
+    }
+
+  data class Order(
+    val productId: Int,
+    val quantity: Int,
+  )
+
+  val zippedOrder =
+    delayedProductFlow.zip(orderFlow) { product, quantity ->
+      Order(product.id, quantity)
+    }
+
   suspend fun demoMergedFlow() {
     mergedProductFlow.collect(LOGGER.infoOf("Product: {}"))
   }
@@ -161,6 +181,10 @@ object Flows {
       },
     )
   }
+
+  suspend fun demoZippedFlow() {
+    zippedOrder.collect(LOGGER.infoOf("Order: {}"))
+  }
 }
 
 suspend fun main() {
@@ -168,6 +192,6 @@ suspend fun main() {
   // Flows.demoTransformers()
   // Flows.demoFlowWithException()
   // Flows.demoMergedFlow()
-  Flows.demoConcatenatedFlow()
-  // Flows.demoZippedFlow()
+  // Flows.demoConcatenatedFlow()
+  Flows.demoZippedFlow()
 }
