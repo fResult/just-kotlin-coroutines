@@ -1,13 +1,17 @@
 package com.fResult.com.fResult.advanced
 
 import java.math.BigDecimal
+import kotlin.math.abs
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
@@ -20,6 +24,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.retry
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.zip
+import kotlinx.coroutines.launch
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -186,39 +191,75 @@ object Flows {
   suspend fun demoZippedFlow() {
     zippedOrder.collect(LOGGER.infoOf("Order: {}"))
   }
-}
 
-/*
- * Exercise: weather station
- * - transform all the temperatures to Fahrenheit (9/5 * Celsius + 32)
- * - calculate the latest average across all locations - emits all the averages
- * - catch any exception and retry the flow, 3 times max
- * - print average temperatures
- * - run the flow for 10 seconds, then cancel it
- */
-data class TemperatureReading(
-  val location: String,
-  val temperature: Double,
-  val timestamp: Long,
-)
+  /*
+   * Exercise: weather station
+   * - transform all the temperatures to Fahrenheit (9/5 * Celsius + 32)
+   * - calculate the latest average across all locations - emits all the averages
+   * - catch any exception and retry the flow, 3 times max
+   * - print average temperatures
+   * - run the flow for 10 seconds, then cancel it
+   */
+  data class TemperatureReading(
+    val location: String,
+    val temperature: Double,
+    val timestamp: Long,
+  )
 
-suspend fun readTemperature(): Flow<TemperatureReading> =
-  flow {
-    val locations = listOf("Paris", "Berlin", "Rome", "Bucharest", "Zegreb")
-    while (true) {
-      val location = locations.random()
-      val temperature = (15..40).random() + Random.nextInt(10) + 1.0 / 10
-      val timestamp = System.currentTimeMillis()
+  suspend fun readTemperature(): Flow<TemperatureReading> =
+    flow {
+      val locations = listOf("Paris", "Berlin", "Rome", "Bucharest", "Zegreb")
+      while (true) {
+        val location = locations.random()
+        val temperature = (15..40).random() + Random.nextInt(10) + 1.0 / 10
+        val timestamp = System.currentTimeMillis()
 
-      if (Random.nextInt() % 1000 < 1) {
-        // 0.1% chance of error
-        throw RuntimeException("Weather station error")
+        val maybeError = abs(Random.nextInt() % 10) < 1 // 10% chance of error
+        if (maybeError) {
+          throw RuntimeException("Weather station error")
+        }
+
+        emit(TemperatureReading(location, temperature, timestamp))
+        delay(Random.nextInt(1000).milliseconds)
       }
+    }
 
-      emit(TemperatureReading(location, temperature, timestamp))
-      delay(Random.nextInt(1000).milliseconds)
+  suspend fun weatherApp() {
+    val transformedFlow =
+      readTemperature()
+        .map { reading ->
+          val fahrenheit = reading.temperature * 9 / 5 + 32
+          TemperatureReading(reading.location, fahrenheit, reading.timestamp)
+        }.scan(0.0 to 0) { acc, reading ->
+          val (sum, count) = acc
+          val newSum = sum + reading.temperature
+          val newCount = count + 1
+
+          return@scan newSum to newCount
+        }.map { (sum, count) ->
+          sum / if (count == 0) 1 else count
+          // flow of global average
+        }.onEach {
+          LOGGER.info("Average temp: {}", it)
+        }.retry(3) { ex ->
+          LOGGER.warn("Caught error, retrying the stream...")
+          return@retry ex is RuntimeException
+        }.catch { e ->
+          LOGGER.warn("Caught too many errors, stopping the stream")
+        }
+
+    coroutineScope {
+      val job =
+        launch {
+          transformedFlow.collect()
+        }
+      launch {
+        delay(10.seconds)
+        job.cancel()
+      }
     }
   }
+}
 
 suspend fun main() {
   // Flows.demoBuildFlow()
@@ -226,5 +267,6 @@ suspend fun main() {
   // Flows.demoFlowWithException()
   // Flows.demoMergedFlow()
   // Flows.demoConcatenatedFlow()
-  Flows.demoZippedFlow()
+  // Flows.demoZippedFlow()
+  Flows.weatherApp()
 }
