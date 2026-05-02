@@ -4,6 +4,7 @@ import java.math.BigDecimal
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.catch
@@ -186,6 +187,38 @@ object Flows {
     zippedOrder.collect(LOGGER.infoOf("Order: {}"))
   }
 }
+
+/*
+ * Exercise: weather station
+ * - transform all the temperatures to Fahrenheit (9/5 * Celsius + 32)
+ * - calculate the latest average across all locations - emits all the averages
+ * - catch any exception and retry the flow, 3 times max
+ * - print average temperatures
+ * - run the flow for 10 seconds, then cancel it
+ */
+data class TemperatureReading(
+  val location: String,
+  val temperature: Double,
+  val timestamp: Long,
+)
+
+suspend fun readTemperature(): Flow<TemperatureReading> =
+  flow {
+    val locations = listOf("Paris", "Berlin", "Rome", "Bucharest", "Zegreb")
+    while (true) {
+      val location = locations.random()
+      val temperature = (15..40).random() + Random.nextInt(10) + 1.0 / 10
+      val timestamp = System.currentTimeMillis()
+
+      if (Random.nextInt() % 1000 < 1) {
+        // 0.1% chance of error
+        throw RuntimeException("Weather station error")
+      }
+
+      emit(TemperatureReading(location, temperature, timestamp))
+      delay(Random.nextInt(1000).milliseconds)
+    }
+  }
 
 suspend fun main() {
   // Flows.demoBuildFlow()
