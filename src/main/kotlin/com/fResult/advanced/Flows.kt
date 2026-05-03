@@ -1,7 +1,6 @@
 package com.fResult.com.fResult.advanced
 
 import java.math.BigDecimal
-import kotlin.math.abs
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -192,17 +191,9 @@ object Flows {
     zippedOrder.collect(LOGGER.infoOf("Order: {}"))
   }
 
-  /*
-   * Exercise: weather station
-   * - transform all the temperatures to Fahrenheit (9/5 * Celsius + 32)
-   * - calculate the latest average across all locations - emits all the averages
-   * - catch any exception and retry the flow, 3 times max
-   * - print average temperatures
-   * - run the flow for 10 seconds, then cancel it
-   */
   data class TemperatureReading(
     val location: String,
-    val temperature: Double,
+    val temperature: BigDecimal,
     val timestamp: Long,
   )
 
@@ -211,7 +202,9 @@ object Flows {
       val locations = listOf("Paris", "Berlin", "Rome", "Bucharest", "Zegreb")
       while (true) {
         val location = locations.random()
-        val temperature = (15..40).random() + Random.nextInt(10) + 1.0 / 10
+        val temperature =
+          (15..40).random().toLong().toBigDecimal() +
+            (Random.nextInt(10).toBigDecimal() + (1 / 10).toBigDecimal())
         val timestamp = System.currentTimeMillis()
 
         val maybeError = abs(Random.nextInt() % 10) < 1 // 10% chance of error
@@ -224,24 +217,31 @@ object Flows {
       }
     }
 
-  suspend fun weatherApp() {
+  /*
+   * Exercise: weather station
+   * - transform all the temperatures to Fahrenheit (9/5 * Celsius + 32)
+   * - calculate the latest average across all locations - emits all the averages
+   * - catch any exception and retry the flow, 3 times max
+   * - print average temperatures
+   * - run the flow for 10 seconds, then cancel it
+   */
+  suspend fun weatherApp1() {
     val transformedFlow =
       readTemperature()
         .map { reading ->
-          val fahrenheit = reading.temperature * 9 / 5 + 32
+          val fahrenheit = reading.temperature * (9 / 5).toBigDecimal() + BigDecimal.valueOf(32)
           TemperatureReading(reading.location, fahrenheit, reading.timestamp)
-        }.scan(0.0 to 0) { acc, reading ->
+        }.scan(BigDecimal.valueOf(0.0) to 0) { acc, reading ->
           val (sum, count) = acc
           val newSum = sum + reading.temperature
           val newCount = count + 1
 
           return@scan newSum to newCount
         }.map { (sum, count) ->
-          sum / if (count == 0) 1 else count
-          // flow of global average
-        }.onEach {
-          LOGGER.info("Average temp: {}", it)
-        }.retry(3) { ex ->
+          sum / (if (count == 0) 1 else count).toBigDecimal()
+          // flow of global average temperatures
+        }.onEach(LOGGER.infoOf("Average temperature: {}"))
+        .retry(3) { ex ->
           LOGGER.warn("Caught error, retrying the stream...")
           return@retry ex is RuntimeException
         }.catch { e ->
@@ -268,5 +268,5 @@ suspend fun main() {
   // Flows.demoMergedFlow()
   // Flows.demoConcatenatedFlow()
   // Flows.demoZippedFlow()
-  Flows.weatherApp()
+  Flows.weatherApp1()
 }
