@@ -1,6 +1,7 @@
 package com.fResult.com.fResult.advanced
 
 import java.math.BigDecimal
+import kotlin.math.abs
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -230,7 +231,7 @@ object Flows {
       readTemperature()
         .map { reading ->
           val fahrenheit = reading.temperature * (9 / 5).toBigDecimal() + BigDecimal.valueOf(32)
-          TemperatureReading(reading.location, fahrenheit, reading.timestamp)
+          return@map TemperatureReading(reading.location, fahrenheit, reading.timestamp)
         }.scan(BigDecimal.valueOf(0.0) to 0) { acc, reading ->
           val (sum, count) = acc
           val newSum = sum + reading.temperature
@@ -238,21 +239,69 @@ object Flows {
 
           return@scan newSum to newCount
         }.map { (sum, count) ->
-          sum / (if (count == 0) 1 else count).toBigDecimal()
+          return@map sum / (if (count == 0) 1 else count).toBigDecimal()
           // flow of global average temperatures
         }.onEach(LOGGER.infoOf("Average temperature: {}"))
         .retry(3) { ex ->
           LOGGER.warn("Caught error, retrying the stream...")
           return@retry ex is RuntimeException
-        }.catch { e ->
+        }.catch { _ ->
           LOGGER.warn("Caught too many errors, stopping the stream")
         }
 
     coroutineScope {
-      val job =
-        launch {
-          transformedFlow.collect()
+      val job = launch { transformedFlow.collect() }
+      launch {
+        delay(10.seconds)
+        job.cancel()
+      }
+    }
+  }
+
+  /*
+   * Exercise: weather station
+   * - transform all the temperatures to Fahrenheit (9/5 * Celsius + 32)
+   * - calculate the latest average across all locations - emits all the averages
+   * - catch any exception and retry the flow, 3 times max
+   * - print average temperatures
+   * - run the flow for 10 seconds, then cancel it
+   * - do the same thing PER LOCATION
+   */
+  suspend fun weatherApp2() {
+    val transformedFlow =
+      readTemperature()
+        .map { reading ->
+          val fahrenheit = reading.temperature * (9 / 5).toBigDecimal() + BigDecimal.valueOf(32)
+          return@map TemperatureReading(reading.location, fahrenheit, reading.timestamp)
+        }.scan(mapOf<String, Pair<BigDecimal, Int>>()) { acc, reading ->
+          val (sum, count) = acc[reading.location] ?: (0.0 to 0)
+          val newSum = BigDecimal.valueOf(sum.toLong()) + reading.temperature
+          val newCount = count + 1
+
+          // Map<location to (sum, count)>
+          return@scan acc + (reading.location to (newSum to newCount))
+        }.map { dict ->
+          return@map dict.mapValues { (location, states) ->
+            val (sum, count) = states
+            val devider = if (count == 0) 0.0 else count
+            sum.div(BigDecimal.valueOf(devider.toLong()))
+          }
+          // Map<location to averageTemp>
+        }.onEach {
+          val report =
+            it.toList().joinToString(separator = "\n\t\t\t") { (location, avg) ->
+              "$location: $avg  ํF"
+            }
+          LOGGER.info("\n\tReport:\n\t\t\t{}", report)
+        }.retry(3) { ex ->
+          LOGGER.warn("Caught error, retrying the stream...", ex)
+          return@retry ex is RuntimeException
+        }.catch { ex ->
+          LOGGER.warn("Caught too many errors, stopping the stream", ex)
         }
+
+    coroutineScope {
+      val job = launch { transformedFlow.collect() }
       launch {
         delay(10.seconds)
         job.cancel()
@@ -268,5 +317,6 @@ suspend fun main() {
   // Flows.demoMergedFlow()
   // Flows.demoConcatenatedFlow()
   // Flows.demoZippedFlow()
-  Flows.weatherApp1()
+  // Flows.weatherApp1()
+  Flows.weatherApp2()
 }
