@@ -59,11 +59,14 @@ object Channels {
        *
        * Prefer `for (item in channel)` or `receiveCatching()`.
        */
-      if (!channel.isClosedForReceive) {
-        // the channel might be closed here
-        LOGGER.info("[index: {}] I've read {}", idx, channel.receive())
-        delay(500.milliseconds)
-      }
+      channel
+        .takeUnless(Channel<*>::isClosedForReceive)
+        ?.receive()
+        ?.also { price ->
+          // the channel might be closed here
+          LOGGER.info("[index: {}] I've read {}", idx, price)
+          delay(500.milliseconds)
+        }
       // receiving is semantically blocking + suspension point
       // receiving from a closed channel is an error
     }
