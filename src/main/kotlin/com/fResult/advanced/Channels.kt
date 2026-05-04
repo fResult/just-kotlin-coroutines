@@ -19,6 +19,7 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 
@@ -141,6 +142,7 @@ object Channels {
           capacity = 2,
           // onBufferOverflow = BufferOverflow.DROP_OLDEST, // GOOG, MSFT
           onBufferOverflow = BufferOverflow.DROP_LATEST, // AAPL, GOOG
+          onUndeliveredElement = { price -> LOGGER.info("{} is dropped", price.symbol) },
         ) // both read and write
 
       // producer
@@ -166,10 +168,55 @@ object Channels {
 
   // closing = cannot send() any more elements, but can receive any elements CURRENTLY in the channel
   // cancelling = closing + dropping all current elements in the channel
+  /*
+   * `onUndeliveredElement` triggers if the channel has elements that are not about to be discarded:
+   * - channel gets canceled with elements inside
+   * - send() throws an error, e.g., if the channel is closed
+   * - receive() throws an error, e.g., if someone cancels the coroutine calling receive()
+   */
+  @OptIn(ExperimentalTime::class)
+  suspend fun demoOnUndelivered() =
+    coroutineScope {
+      val channel =
+        Channel<StockPrice>(
+          capacity = 10,
+          onUndeliveredElement = { stockPrice -> LOGGER.info("Just dropped {}", stockPrice) },
+        )
+
+      val prices =
+        listOf(
+          StockPrice("AAPL", BigDecimal(100.0), Clock.System.now()),
+          StockPrice("GOOG", BigDecimal(789.0), Clock.System.now()),
+          StockPrice("MSFT", BigDecimal(78.0), Clock.System.now()),
+          StockPrice("AMZN", BigDecimal(1234.8), Clock.System.now()),
+        )
+
+      val producer =
+        launch {
+          prices.forEach { price ->
+            LOGGER.info("Sending: {}", price)
+            channel.send(price)
+            delay(200.milliseconds)
+          }
+        }
+
+      val consumer =
+        launch {
+          repeat(2) {
+            val price = channel.receive()
+            LOGGER.info("Received: {}", price)
+            delay(3.seconds)
+          }
+          channel.cancel() // close + drop all elements in the buffer
+        }
+
+      (producer to consumer).toList().joinAll()
+    }
 }
 
 suspend fun main() {
   // Channels.stockMarketTerminal()
   // Channels.stockMarketNicer()
-  Channels.demoCustomizeChannel()
+  // Channels.demoCustomizeChannel()
+  Channels.demoOnUndelivered()
 }
