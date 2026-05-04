@@ -1,13 +1,17 @@
+@file:Suppress("ktlint:standard:no-consecutive-comments")
+
 package com.fResult.com.fResult.advanced
 
 import java.math.BigDecimal
 import kotlin.random.Random
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ChannelResult
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -34,14 +38,24 @@ object Channels {
 
   @OptIn(ExperimentalTime::class)
   suspend fun pushStocks(channel: SendChannel<StockPrice>) {
+    LOGGER.info("Trying to add an `AAPL` element...")
     channel.send(StockPrice("AAPL", BigDecimal(100), Clock.System.now()))
-    delay(Random.nextInt(1000).milliseconds)
+    LOGGER.info("Pushed an `AAPL` element")
+
+    delay(Random.nextInt(3000).milliseconds)
+
+    LOGGER.info("Trying to add a `GOOG` element...")
     channel.send(StockPrice("GOOG", BigDecimal(789), Clock.System.now()))
-    delay(Random.nextInt(1000).milliseconds)
+    LOGGER.info("Pushed a `GOOG` element")
+
+    delay(Random.nextInt(3000).milliseconds)
+
+    LOGGER.info("Trying to add an `MSFT` element...")
     channel.send(StockPrice("MSFT", BigDecimal(78), Clock.System.now()))
+    LOGGER.info("Pushed an `MSFT` element")
 
     // when done, close the channel
-    channel.close()
+    channel.close() // cannot push any new elements into the channel
     // semantic blocking + suspension point
   }
 
@@ -77,12 +91,11 @@ object Channels {
   }
 
   @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
-  suspend fun readStocksWithTryReceive(channel: ReceiveChannel<StockPrice>) {
+  suspend fun readStocksWithReceiveCaching(channel: ReceiveChannel<StockPrice>) {
     repeat(4) { idx ->
       /*
        * Can use `channel.tryReceive()`, but it is not semantic blocking (DOESN'T wait)
        */
-      @Suppress("standard:no-consecutive-comments")
       // LOGGER.info("[index: {}] I've read {}", idx, channel.tryReceive())
       channel
         .receiveCatching() // can be a value, failed, or closed
@@ -102,7 +115,7 @@ object Channels {
 
       launch { pushStocks(stocksChannel) }
       // launch { readStocksWithChannelClosedCheck(stocksChannel) }
-      launch { readStocksWithTryReceive(stocksChannel) }
+      launch { readStocksWithReceiveCaching(stocksChannel) }
     }
 
   @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTime::class)
@@ -116,9 +129,47 @@ object Channels {
 
       launch { readStocksWithChannelClosedCheck(stockChannel) }
     }
+
+  /*
+   * Customize a channel
+   * - optional capacity
+   */
+  suspend fun demoCustomizeChannel() {
+    coroutineScope {
+      val stockChannel =
+        Channel<StockPrice>(
+          capacity = 2,
+          // onBufferOverflow = BufferOverflow.DROP_OLDEST, // GOOG, MSFT
+          onBufferOverflow = BufferOverflow.DROP_LATEST, // AAPL, GOOG
+        ) // both read and write
+
+      // producer
+      launch {
+        pushStocks(stockChannel)
+        // buffer items inside
+        /*
+         * if the buffer is full, any `send()` will semantically block
+         * - Semantically block (default)
+         * - drop the oldest element in the buffer
+         * - drop the element which wants to get in (latest
+         */
+      }
+
+      // consumer
+      launch {
+        LOGGER.info("Taking a while for the consumer to start...")
+        delay(5.seconds)
+        readStocksWithReceiveCaching(stockChannel)
+      }
+    }
+  }
+
+  // closing = cannot send() any more elements, but can receive any elements CURRENTLY in the channel
+  // cancelling = closing + dropping all current elements in the channel
 }
 
 suspend fun main() {
   // Channels.stockMarketTerminal()
-  Channels.stockMarketNicer()
+  // Channels.stockMarketNicer()
+  Channels.demoCustomizeChannel()
 }
