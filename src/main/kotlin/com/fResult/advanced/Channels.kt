@@ -12,6 +12,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ChannelResult
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -102,8 +103,25 @@ object Channels {
       // launch { readStocksWithChannelClosedCheck(stocksChannel) }
       launch { readStocksWithTryReceive(stocksChannel) }
     }
+
+  @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTime::class)
+  suspend fun stockMarketNicer() =
+    coroutineScope {
+      val stockChannel =
+        produce {
+          // launches a coroutine with a `send()`
+          channel.send(StockPrice("AAPL", BigDecimal(100), Clock.System.now()))
+          delay(Random.nextInt(1000).milliseconds)
+          channel.send(StockPrice("GOOG", BigDecimal(789), Clock.System.now()))
+          delay(Random.nextInt(1000).milliseconds)
+          channel.send(StockPrice("MSFT", BigDecimal(78), Clock.System.now()))
+        } // will automatically close the channel
+
+      launch { readStocksWithChannelClosedCheck(stockChannel) }
+    }
 }
 
 suspend fun main() {
-  Channels.stockMarketTerminal()
+  // Channels.stockMarketTerminal()
+  Channels.stockMarketNicer()
 }
