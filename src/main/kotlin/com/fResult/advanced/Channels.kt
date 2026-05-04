@@ -9,6 +9,9 @@ import kotlin.time.Instant
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ChannelResult
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -29,7 +32,7 @@ object Channels {
     )
 
   @OptIn(ExperimentalTime::class)
-  suspend fun pushStocks(channel: Channel<StockPrice>) {
+  suspend fun pushStocks(channel: SendChannel<StockPrice>) {
     channel.send(StockPrice("AAPL", BigDecimal(100), Clock.System.now()))
     delay(Random.nextInt(1000).milliseconds)
     channel.send(StockPrice("GOOG", BigDecimal(789), Clock.System.now()))
@@ -42,7 +45,7 @@ object Channels {
   }
 
   @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
-  suspend fun readStocksWithChannelClosedCheck(channel: Channel<StockPrice>) {
+  suspend fun readStocksWithChannelClosedCheck(channel: ReceiveChannel<StockPrice>) {
     repeat(4) { idx ->
       /*
        * ⚠️ Race condition:
@@ -60,7 +63,7 @@ object Channels {
        * Prefer `for (item in channel)` or `receiveCatching()`.
        */
       channel
-        .takeUnless(Channel<*>::isClosedForReceive)
+        .takeUnless(ReceiveChannel<*>::isClosedForReceive)
         ?.receive()
         ?.also { price ->
           // the channel might be closed here
@@ -72,11 +75,32 @@ object Channels {
     }
   }
 
+  @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
+  suspend fun readStocksWithTryReceive(channel: ReceiveChannel<StockPrice>) {
+    repeat(4) { idx ->
+      /*
+       * Can use `channel.tryReceive()`, but it is not semantic blocking (DOESN'T wait)
+       */
+      @Suppress("standard:no-consecutive-comments")
+      // LOGGER.info("[index: {}] I've read {}", idx, channel.tryReceive())
+      channel
+        .receiveCatching() // can be a value, failed, or closed
+        .takeIf(ChannelResult<*>::isSuccess)
+        ?.getOrNull()
+        ?.also { maybePrice ->
+          LOGGER.info("[index: {}] I've read {}", idx, maybePrice)
+        }
+      // receiving is semantically blocking + suspension point
+      // receiving from a closed channel is an error
+    }
+  }
+
   suspend fun stockMarketTerminal() =
     coroutineScope {
       val stocksChannel = Channel<StockPrice>()
       launch { pushStocks(stocksChannel) }
-      launch { readStocksWithChannelClosedCheck(stocksChannel) }
+      // launch { readStocksWithChannelClosedCheck(stocksChannel) }
+      launch { readStocksWithTryReceive(stocksChannel) }
     }
 }
 
