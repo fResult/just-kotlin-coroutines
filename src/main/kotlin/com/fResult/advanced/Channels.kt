@@ -98,7 +98,8 @@ object Channels {
 
   suspend fun stockMarketTerminal() =
     coroutineScope {
-      val stocksChannel = Channel<StockPrice>()
+      val stocksChannel = Channel<StockPrice>() // both read and write
+
       launch { pushStocks(stocksChannel) }
       // launch { readStocksWithChannelClosedCheck(stocksChannel) }
       launch { readStocksWithTryReceive(stocksChannel) }
@@ -110,11 +111,7 @@ object Channels {
       val stockChannel =
         produce {
           // launches a coroutine with a `send()`
-          channel.send(StockPrice("AAPL", BigDecimal(100), Clock.System.now()))
-          delay(Random.nextInt(1000).milliseconds)
-          channel.send(StockPrice("GOOG", BigDecimal(789), Clock.System.now()))
-          delay(Random.nextInt(1000).milliseconds)
-          channel.send(StockPrice("MSFT", BigDecimal(78), Clock.System.now()))
+          pushStocks(channel)
         } // will automatically close the channel
 
       launch { readStocksWithChannelClosedCheck(stockChannel) }
