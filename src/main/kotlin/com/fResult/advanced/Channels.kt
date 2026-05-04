@@ -1,0 +1,82 @@
+package com.fResult.com.fResult.advanced
+
+import java.math.BigDecimal
+import kotlin.random.Random
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.slf4j.LoggerFactory
+
+object Channels {
+  private val LOGGER = LoggerFactory.getLogger(javaClass)
+
+  // channel = concurrent queue
+  // producer-consumer problem
+
+  @OptIn(ExperimentalTime::class)
+  data class StockPrice
+    constructor(
+      val symbol: String,
+      val price: BigDecimal,
+      val timestamp: Instant,
+    )
+
+  @OptIn(ExperimentalTime::class)
+  suspend fun pushStocks(channel: Channel<StockPrice>) {
+    channel.send(StockPrice("AAPL", BigDecimal(100), Clock.System.now()))
+    delay(Random.nextInt(1000).milliseconds)
+    channel.send(StockPrice("GOOG", BigDecimal(789), Clock.System.now()))
+    delay(Random.nextInt(1000).milliseconds)
+    channel.send(StockPrice("MSFT", BigDecimal(78), Clock.System.now()))
+
+    // when done, close the channel
+    channel.close()
+    // semantic blocking + suspension point
+  }
+
+  @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
+  suspend fun readStocksWithChannelClosedCheck(channel: Channel<StockPrice>) {
+    repeat(4) { idx ->
+      /*
+       * ⚠️ Race condition:
+       * `isClosedForReceive` and `receive()` are NOT atomic.
+       *
+       * The channel can be open when checked but closed before `receive()` executes.
+       * → `receive()` may throw (channel already closed).
+       *
+       * Example:
+       * - B: checks `!isClosedForReceive` → true
+       * - (context switch)
+       * - A: closes channel
+       * - B: calls `receive()` → ❌ fails
+       *
+       * Prefer `for (item in channel)` or `receiveCatching()`.
+       */
+      if (!channel.isClosedForReceive) {
+        // the channel might be closed here
+        LOGGER.info("[index: {}] I've read {}", idx, channel.receive())
+        delay(500.milliseconds)
+      }
+      // receiving is semantically blocking + suspension point
+      // receiving from a closed channel is an error
+    }
+  }
+
+  suspend fun stockMarketTerminal() =
+    coroutineScope {
+      val stocksChannel = Channel<StockPrice>()
+      launch { pushStocks(stocksChannel) }
+      launch { readStocksWithChannelClosedCheck(stocksChannel) }
+    }
+}
+
+suspend fun main() {
+  Channels.stockMarketTerminal()
+}
