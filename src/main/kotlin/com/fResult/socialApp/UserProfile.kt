@@ -1,6 +1,9 @@
 package com.fResult.com.fResult.socialApp
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 data class UserProfile(
   val id: String,
@@ -12,12 +15,24 @@ class UserProfileViewModel(
   private val userRepository: UserRepository,
   private val coroutineScope: CoroutineScope,
 ) {
-  // the state of the UI
+  // the states of the UI
   // the current user profile
-  private var profile: UserProfile? = null
+  private val _profile = MutableStateFlow<UserProfile?>(null) // writable thread safe variable
+  val profile = _profile.asStateFlow() // read-only
 
   // loading state (true/false)
-  private var loading = false
+  private val _loading = MutableStateFlow(false)
+  val loading = _loading.asStateFlow()
+
+  fun loadUserProfile(userId: String) =
+    coroutineScope.launch {
+      _loading.value = true // assignment is thread-safe
+      try {
+        _profile.value = userRepository.fetchProfile(userId)
+      } finally {
+        _loading.value = false
+      }
+    }
 }
 
 interface UserRepository {
