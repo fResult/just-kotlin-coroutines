@@ -1,5 +1,7 @@
 package com.fResult.socialApp
 
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -75,4 +77,27 @@ class UserProfileViewModelTest {
       assertFalse(viewModel.loading.value) // the screen has finished loading
       assertEquals(userId, viewModel.profile.value?.id)
     }
+
+  @Test
+  fun `updateUserProfile should modify user profile and loading status`() {
+    val name = "KornZilla"
+    val age = 999
+
+    testScope.runTest {
+      viewModel.loadUserProfile("1")
+      advanceTimeBy(1.seconds)
+
+      viewModel.updateUserProfile(name, age)
+      runCurrent()
+
+      assertTrue(viewModel.loading.value)
+
+      advanceTimeBy(500.milliseconds)
+      runCurrent()
+
+      assertFalse(viewModel.loading.value)
+      assertEquals(name, viewModel.profile.value?.name)
+      assertEquals(age, viewModel.profile.value?.age)
+    }
+  }
 }
