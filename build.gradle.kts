@@ -15,7 +15,7 @@ dependencies {
   implementation("ch.qos.logback:logback-classic:1.5.32")
 
   testImplementation(kotlin("test"))
-  runtimeOnly("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
   testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.3")
 }
 
