@@ -3,9 +3,15 @@ package com.fResult.socialApp
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 
 class UserProfileViewModelTest {
   // coroutine dispatcher
@@ -35,4 +41,16 @@ class UserProfileViewModelTest {
       }
     }
   private val viewModel = UserProfileViewModel(fakeUserRepo, testScope)
+
+  @OptIn(ExperimentalCoroutinesApi::class)
+  @BeforeEach
+  fun setup() {
+    Dispatchers.setMain(testDispatcher)
+  }
+
+  @OptIn(ExperimentalCoroutinesApi::class)
+  @AfterEach
+  fun tearDown() {
+    Dispatchers.resetMain()
+  }
 }
