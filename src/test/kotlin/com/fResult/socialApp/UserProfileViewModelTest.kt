@@ -8,11 +8,17 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class UserProfileViewModelTest {
   // coroutine dispatcher
   private val testDispatcher = StandardTestDispatcher()
@@ -42,15 +48,31 @@ class UserProfileViewModelTest {
     }
   private val viewModel = UserProfileViewModel(fakeUserRepo, testScope)
 
-  @OptIn(ExperimentalCoroutinesApi::class)
   @BeforeEach
   fun setup() {
     Dispatchers.setMain(testDispatcher)
   }
 
-  @OptIn(ExperimentalCoroutinesApi::class)
   @AfterEach
   fun tearDown() {
     Dispatchers.resetMain()
   }
+
+  @Test
+  fun `load user profile should update user profile and loading status`() =
+    testScope.runTest {
+      val userId = "1"
+
+      // can run coroutines
+      viewModel.loadUserProfile(userId)
+      runCurrent() // runs all pending tasks in the coroutine displatcher
+      assertTrue(viewModel.loading.value) // true at this point
+      assertNull(viewModel.profile.value) // no profile loaded yet
+
+      advanceTimeBy(1.seconds) // moves the internal clock of the dispatcher
+      runCurrent() // the coroutine is finished
+
+      assertFalse(viewModel.loading.value) // the screen has finished loading
+      assertEquals(userId, viewModel.profile.value?.id)
+    }
 }
