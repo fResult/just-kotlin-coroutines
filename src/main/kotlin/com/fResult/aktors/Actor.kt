@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory
 
 /*
  * - name and channel args
- * - `start()` method which pops elements off the channel and logs them
+ * - `run()` method which pops elements off the channel and logs them
  */
 internal class Actor<T>(
   private val name: String,
