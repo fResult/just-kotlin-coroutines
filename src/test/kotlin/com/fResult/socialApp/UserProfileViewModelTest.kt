@@ -11,6 +11,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -94,6 +95,28 @@ class UserProfileViewModelTest {
 
       advanceTimeBy(500.milliseconds)
       runCurrent()
+
+      assertFalse(viewModel.loading.value)
+      assertEquals(name, viewModel.profile.value?.name)
+      assertEquals(age, viewModel.profile.value?.age)
+    }
+  }
+
+  @Test
+  fun `load user profile and update user profile`() {
+    val name = "KornZilla"
+    val age = 999
+
+    testScope.runTest {
+      val userId = "1"
+      viewModel.loadUserProfile(userId)
+      advanceUntilIdle()
+
+      viewModel.updateUserProfile(name, age)
+      runCurrent()
+      assertTrue(viewModel.loading.value)
+
+      advanceUntilIdle()
 
       assertFalse(viewModel.loading.value)
       assertEquals(name, viewModel.profile.value?.name)
