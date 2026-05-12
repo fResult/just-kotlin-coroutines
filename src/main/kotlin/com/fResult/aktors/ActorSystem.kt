@@ -13,10 +13,11 @@ import kotlinx.coroutines.coroutineScope
  */
 object ActorSystem : ActorScope() {
   suspend fun <T> app(
+    guardianBehavior: Behavior<T>,
     name: String,
     action: suspend (ActorRef<T>) -> Unit,
   ) = coroutineScope {
-    val guardian = createActor<T>(name, this, CoroutineName(name))
+    val guardian = createActor<T>(guardianBehavior, name, this, CoroutineName(name))
     action(guardian)
   }
 }

@@ -9,7 +9,7 @@ object Behaviors {
   fun <T> same(): Behavior<T> = Same as Behavior<T>
 
   class ReceiveMessage<T>(
-    private val handler: (T) -> Behavior<T>,
+    val handler: (T) -> Behavior<T>,
   ) : Behavior<T>
 
   data object Same : Behavior<Nothing>

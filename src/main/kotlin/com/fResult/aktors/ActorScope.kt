@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
  */
 open class ActorScope {
   protected fun <T> createActor(
+    behavior: Behavior<T>,
     name: String,
     scope: CoroutineScope,
     context: CoroutineContext,
@@ -19,7 +20,7 @@ open class ActorScope {
     val mailbox = Channel<T>(capacity = Channel.UNLIMITED) // can configure it
     scope.launch(context) {
       val actor = Actor(name, mailbox)
-      actor.run()
+      actor.run(behavior)
     }
 
     return ActorRef(mailbox)
