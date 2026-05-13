@@ -19,6 +19,9 @@ internal class Actor<T>(
     var newBehavior = behavior
     while (true) {
       when (behavior) {
+        is Behaviors.Setup -> {
+          newBehavior = behavior.initialization()
+        }
         is Behaviors.ReceiveMessage -> {
           val message = channel.receive()
           val handle = behavior.handler
