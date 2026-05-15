@@ -10,6 +10,9 @@ object Behaviors {
   @Suppress("UNCHECKED_CAST")
   fun <T> same(): Behavior<T> = Same as Behavior<T>
 
+  @Suppress("UNCHECKED_CAST")
+  fun <T> stopped(): Behavior<T> = Stopped as Behavior<T>
+
   class ReceiveMessage<T>(
     val handler: (T) -> Behavior<T>,
   ) : Behavior<T>
@@ -19,6 +22,8 @@ object Behaviors {
   ) : Behavior<T>
 
   data object Same : Behavior<Nothing>
+
+  data object Stopped : Behavior<Nothing>
 }
 
 /*
