@@ -5,12 +5,12 @@ import com.fResult.aktors.Behavior
 import com.fResult.aktors.Behaviors
 import org.slf4j.LoggerFactory
 
-object WordCounter {
+object WordCounterStateful {
   private val log = LoggerFactory.getLogger(javaClass)
 
   operator fun invoke(): Behavior<String> =
     Behaviors.setup {
-      log.info("Setting up word counter")
+      log.info("Setting up word counter (Stateful)")
       var total = 0
 
       // Behaviors.same() // should stop the actor
@@ -29,7 +29,7 @@ object StatefulActorDemo {
    * actorRef.tell("Coroutines rock") -> wc = 9
    */
   suspend fun main() {
-    ActorSystem.app(WordCounter(), "StatefulWordCounterSystem") { guardianActor ->
+    ActorSystem.app(WordCounterStateful(), "StatefulWordCounterSystem") { guardianActor ->
       guardianActor `!` "This is an actor framework on top of coroutines"
       guardianActor `!` "Coroutines rock"
     }
