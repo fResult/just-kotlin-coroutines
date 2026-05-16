@@ -1,14 +1,7 @@
 package com.fResult.aktors
 
 sealed interface Behavior<in T> {
-  fun <S : T> ifSameThen(other: Behavior<S>): Behavior<S> =
-    if (this ==
-      Behaviors.Same
-    ) {
-      other
-    } else {
-      this
-    }
+  fun <S : T> ifSameThen(other: Behavior<S>): Behavior<S> = this
 }
 
 object Behaviors {
@@ -16,11 +9,9 @@ object Behaviors {
 
   fun <T> setup(initialization: () -> Behavior<T>) = Setup(initialization)
 
-  @Suppress("UNCHECKED_CAST")
-  fun <T> same(): Behavior<T> = Same as Behavior<T>
+  fun <T> same(): Behavior<T> = Same
 
-  @Suppress("UNCHECKED_CAST")
-  fun <T> stopped(): Behavior<T> = Stopped as Behavior<T>
+  fun <T> stopped(): Behavior<T> = Stopped
 
   class ReceiveMessage<T>(
     val handler: (T) -> Behavior<T>,
@@ -30,9 +21,11 @@ object Behaviors {
     val initialization: () -> Behavior<T>,
   ) : Behavior<T>
 
-  data object Same : Behavior<Nothing>
+  data object Same : Behavior<Any?> {
+    override fun <S> ifSameThen(other: Behavior<S>) = other
+  }
 
-  data object Stopped : Behavior<Nothing>
+  data object Stopped : Behavior<Any?>
 }
 
 /*

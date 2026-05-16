@@ -17,6 +17,7 @@ internal class Actor<T>(
   private val log = LoggerFactory.getLogger(javaClass)
 
   suspend fun run(startBehavior: Behavior<T>) {
+    log.info("Starting actor $name")
     var behavior = startBehavior
     var newBehavior = behavior
     while (true) {

@@ -29,7 +29,7 @@ object StatefulActorDemo {
    * actorRef.tell("Coroutines rock") -> wc = 9
    */
   suspend fun main() {
-    ActorSystem.app(WordCounter(), "WordCounterSystem") { guardianActor ->
+    ActorSystem.app(WordCounter(), "StatefulWordCounterSystem") { guardianActor ->
       guardianActor `!` "This is an actor framework on top of coroutines"
       guardianActor `!` "Coroutines rock"
     }
