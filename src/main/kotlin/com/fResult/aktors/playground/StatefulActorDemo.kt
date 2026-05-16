@@ -13,6 +13,7 @@ object WordCounter {
       log.info("Setting up word counter")
       var total = 0
 
+      // Behaviors.same() // should stop the actor
       return@setup Behaviors.receiveMessage { message ->
         val newCount = message.split(" ").size
         total += newCount

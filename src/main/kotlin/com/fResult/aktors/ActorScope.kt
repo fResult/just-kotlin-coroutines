@@ -3,6 +3,7 @@ package com.fResult.aktors
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 
 /*
@@ -19,7 +20,7 @@ open class ActorScope {
   ): ActorRef<T> {
     val mailbox = Channel<T>(capacity = Channel.UNLIMITED) // can configure it
     scope.launch(context) {
-      val actor = Actor(name, mailbox)
+      val actor = Actor(name, mailbox, coroutineContext.job)
       actor.run(behavior)
     }
 

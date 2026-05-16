@@ -24,13 +24,27 @@ internal class Actor<T>(
         is Behaviors.Setup -> {
           newBehavior = behavior.initialization()
           // if behaviors.same -> stopped behavior
+          behavior =
+            if (newBehavior == Behaviors.Same) {
+              Behaviors.stopped()
+            } else {
+              newBehavior
+            }
         }
+
         is Behaviors.ReceiveMessage -> {
           val message = channel.receive()
           val handle = behavior.handler
           newBehavior = handle(message)
           // if behaviors.same -> behavior
+          behavior =
+            if (newBehavior == Behaviors.Same) {
+              behavior
+            } else {
+              newBehavior
+            }
         }
+
         is Behaviors.Same ->
           throw IllegalStateException(
             """
@@ -46,7 +60,6 @@ internal class Actor<T>(
         }
       }
 
-      behavior = maybeTransition(behavior, newBehavior)
       newBehavior = behavior
       yield() // the suspension point is important
     }
