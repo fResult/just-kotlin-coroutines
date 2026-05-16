@@ -1,17 +1,15 @@
 package com.fResult.aktors
 
-sealed interface Behavior<T>
+sealed interface Behavior<out T>
 
 object Behaviors {
   fun <T> receiveMessage(handler: (T) -> Behavior<T>): Behavior<T> = ReceiveMessage(handler)
 
   fun <T> setup(initialization: () -> Behavior<T>) = Setup(initialization)
 
-  @Suppress("UNCHECKED_CAST")
-  fun <T> same(): Behavior<T> = Same as Behavior<T>
+  fun <T> same(): Behavior<T> = Same
 
-  @Suppress("UNCHECKED_CAST")
-  fun <T> stopped(): Behavior<T> = Stopped as Behavior<T>
+  fun <T> stopped(): Behavior<T> = Stopped
 
   class ReceiveMessage<T>(
     val handler: (T) -> Behavior<T>,
