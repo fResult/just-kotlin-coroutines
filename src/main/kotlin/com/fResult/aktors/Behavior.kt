@@ -1,15 +1,26 @@
 package com.fResult.aktors
 
-sealed interface Behavior<out T>
+sealed interface Behavior<in T> {
+  fun <S : T> ifSameThen(other: Behavior<S>): Behavior<S> =
+    if (this ==
+      Behaviors.Same
+    ) {
+      other
+    } else {
+      this
+    }
+}
 
 object Behaviors {
   fun <T> receiveMessage(handler: (T) -> Behavior<T>): Behavior<T> = ReceiveMessage(handler)
 
   fun <T> setup(initialization: () -> Behavior<T>) = Setup(initialization)
 
-  fun <T> same(): Behavior<T> = Same
+  @Suppress("UNCHECKED_CAST")
+  fun <T> same(): Behavior<T> = Same as Behavior<T>
 
-  fun <T> stopped(): Behavior<T> = Stopped
+  @Suppress("UNCHECKED_CAST")
+  fun <T> stopped(): Behavior<T> = Stopped as Behavior<T>
 
   class ReceiveMessage<T>(
     val handler: (T) -> Behavior<T>,

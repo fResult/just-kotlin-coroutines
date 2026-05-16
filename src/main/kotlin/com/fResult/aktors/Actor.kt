@@ -24,25 +24,14 @@ internal class Actor<T>(
         is Behaviors.Setup -> {
           newBehavior = behavior.initialization()
           // if behaviors.same -> stopped behavior
-          behavior =
-            if (newBehavior == Behaviors.Same) {
-              Behaviors.stopped()
-            } else {
-              newBehavior
-            }
+          behavior = newBehavior.ifSameThen(Behaviors.stopped())
         }
 
         is Behaviors.ReceiveMessage -> {
           val message = channel.receive()
           val handle = behavior.handler
           newBehavior = handle(message)
-          // if behaviors.same -> behavior
-          behavior =
-            if (newBehavior == Behaviors.Same) {
-              behavior
-            } else {
-              newBehavior
-            }
+          behavior = newBehavior.ifSameThen(behavior)
         }
 
         is Behaviors.Same ->
@@ -60,17 +49,7 @@ internal class Actor<T>(
         }
       }
 
-      newBehavior = behavior
       yield() // the suspension point is important
     }
   }
-
-  private fun maybeTransition(
-    behavior: Behavior<T>,
-    newBehavior: Behavior<T>,
-  ): Behavior<T> =
-    when (newBehavior) {
-      is Behaviors.Same -> behavior
-      else -> newBehavior
-    }
 }
