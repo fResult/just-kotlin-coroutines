@@ -1,4 +1,4 @@
-package com.fResult.aktors
+package com.fResult.aktors.lib
 
 import kotlinx.coroutines.channels.SendChannel
 

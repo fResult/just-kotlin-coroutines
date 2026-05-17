@@ -1,4 +1,4 @@
-package com.fResult.aktors
+package com.fResult.aktors.lib
 
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope

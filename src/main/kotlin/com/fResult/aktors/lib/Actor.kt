@@ -1,4 +1,4 @@
-package com.fResult.aktors
+package com.fResult.aktors.lib
 
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel

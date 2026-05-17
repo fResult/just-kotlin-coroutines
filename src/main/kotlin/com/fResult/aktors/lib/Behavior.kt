@@ -1,4 +1,4 @@
-package com.fResult.aktors
+package com.fResult.aktors.lib
 
 sealed interface Behavior<in T> {
   fun <S : T> ifSameThen(other: Behavior<S>): Behavior<S> = this

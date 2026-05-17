@@ -1,7 +1,7 @@
-package com.fResult.aktors.playground
+package com.fResult.aktors
 
-import com.fResult.aktors.ActorSystem
-import com.fResult.aktors.Behaviors
+import com.fResult.aktors.lib.ActorSystem
+import com.fResult.aktors.lib.Behaviors
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
