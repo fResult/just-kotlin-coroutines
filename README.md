@@ -17,13 +17,23 @@ Following the [Rock the JVM - Kotlin Coroutines & Concurrency course](https://ro
 
 ### Reactive Streams: Channels & Flows
 
-- **Channels & Buffering:** Handled concurrent communication with Channels, solving race conditions with `receiveCatching` and exploring buffer overflow policies
+- **Channels & Buffering:** Handled concurrent communication with Channels, solving race conditions with, and exploring buffer overflow policies
 - **Flows & UI State:** Built resilient, backpressure-aware streams using Flow operators (`map`, `scan`, `retry`), and managed read-only UI state via `MutableStateFlow`
 
 ### The Actor Model (Aktors)
 
-- **Custom Actor Implementation:** Designed a custom Actor system from scratch (Actors, Behaviors, and Contexts) to manage state purely through asynchronous message passing
-- **Stateful vs Stateless Actors:** Demonstrated how actors can eliminate shared mutable state issues by processing messages sequentially within their own coroutine scope
+- **Custom Framework Architecture:** Built a hierarchical Actor system (`ActorSystem`, `ActorContext`) from scratch, where every actor is backed by its own coroutine and unlimited-capacity `Channel`
+- **Type-Safe Message Passing:** Implemented `ActorRef<T>` with a custom infix `!` operator to enforce strongly typed, asynchronous communication between actors
+- **Finite-State Machine (FSM) via Behaviors:** Designed a `Behavior` system (`Setup`, `ReceiveMessage`, `Same`, `Stopped`) allowing actors to dynamically change their message-handling logic at runtime
+- **State Encapsulation:** Demonstrated how both Stateful and Stateless actors eliminate shared mutable state by processing messages sequentially, removing the need for locks, and avoiding race conditions entirely
+
+## Tech Stack
+
+- **Kotlin** 2.2.21 (JVM toolchain 24)
+- **kotlinx-coroutines** 1.10.2
+- **Logback** 1.5.32 for structured logging
+- **JUnit Jupiter** 6.0.3 with `kotlinx-coroutines-test`
+- **Spotless** + ktlint, wired into a pre-commit Git hook (`./gradlew installGitHooks`)
 
 ## Running the Examples
 
