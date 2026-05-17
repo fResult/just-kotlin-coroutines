@@ -1,8 +1,10 @@
 package com.fResult.aktors.lib
 
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import org.slf4j.LoggerFactory
 
 class ActorContext<T>(
   val self: ActorRef<T>,
@@ -11,6 +13,8 @@ class ActorContext<T>(
   val job: Job, // coroutine of this actor
   val scope: CoroutineScope,
 ) : ActorScope() {
+  val log = LoggerFactory.getLogger(name)
+
   fun <S> spawn(
     name: String,
     behavior: Behavior<S>,
@@ -25,7 +29,11 @@ class ActorContext<T>(
   private fun buildCoroutineContext(
     parentJob: Job,
     name: String,
-  ): CoroutineContext = TODO()
+  ): CoroutineContext = parentJob + CoroutineName(name)
+
+  // path /
+  // child1 /child1
+  // grand-child1 /child1/grand-child1
 }
 
 /*
