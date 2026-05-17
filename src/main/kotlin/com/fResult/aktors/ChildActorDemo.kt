@@ -21,29 +21,52 @@ class ChildActorDemo {
     operator fun invoke(): Behavior<Command> = idle()
 
     private fun idle(): Behavior<Command> =
-      Behaviors.receiveMessage { ctx, message ->
-        return@receiveMessage when (message) {
+      Behaviors.receiveMessage { ctx, command ->
+        return@receiveMessage when (command) {
           is CreateChild -> {
-            ctx.log.info("[parent] Creating child with name ${message.name}")
-            val childRef = ctx.spawn(message.name, Child())
+            ctx.log.info("[parent] Creating child with name ${command.name}")
+            val childRef = ctx.spawn(command.name, Child())
             withChild(childRef)
           }
 
           else -> {
-            ctx.log.info("[parent]: I don't recognize this message: $message")
+            ctx.log.info("[parent]: I don't recognize this message: $command")
             Behaviors.same()
           }
         }
       }
 
-    private fun withChild(childRef: ActorRef<String>): Behavior<Command> = TODO()
+    private fun withChild(childRef: ActorRef<String>): Behavior<Command> =
+      Behaviors.receiveMessage { ctx, command ->
+        when (command) {
+          is TellChild -> {
+            ctx.log.info("[parent] Sending message to my child ${command.message}")
+            childRef `!` command.message
+            Behaviors.same()
+          }
+
+          is StopChild -> {
+            ctx.log.info("[parent] Stopping my child")
+            StopChild::class.simpleName?.also { childRef `!` it }
+            idle()
+          }
+
+          is CreateChild -> {
+            ctx.log.info("[parent]: I don't recognize this message: $command")
+            Behaviors.same()
+          }
+        }
+      }
   }
 
   object Child {
     operator fun invoke(): Behavior<String> =
       Behaviors.receiveMessage { ctx, message ->
         ctx.log.info("[child] I've received $message")
-        Behaviors.same()
+        when (message) {
+          StopChild::class.simpleName -> Behaviors.stopped()
+          else -> Behaviors.same()
+        }
       }
   }
 
