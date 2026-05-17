@@ -20,6 +20,11 @@ Following the [Rock the JVM - Kotlin Coroutines & Concurrency course](https://ro
 - **Channels & Buffering:** Handled concurrent communication with Channels, solving race conditions with `receiveCatching` and exploring buffer overflow policies
 - **Flows & UI State:** Built resilient, backpressure-aware streams using Flow operators (`map`, `scan`, `retry`), and managed read-only UI state via `MutableStateFlow`
 
+### The Actor Model (Aktors)
+
+- **Custom Actor Implementation:** Designed a custom Actor system from scratch (Actors, Behaviors, and Contexts) to manage state purely through asynchronous message passing
+- **Stateful vs Stateless Actors:** Demonstrated how actors can eliminate shared mutable state issues by processing messages sequentially within their own coroutine scope
+
 ## Running the Examples
 
 Each topic lives in its own file under `src/main/kotlin/com/fResult/`.\
