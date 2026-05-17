@@ -3,21 +3,18 @@ package com.fResult.aktors
 import com.fResult.aktors.lib.ActorSystem
 import com.fResult.aktors.lib.Behavior
 import com.fResult.aktors.lib.Behaviors
-import org.slf4j.LoggerFactory
 
 object WordCounterStateful {
-  private val log = LoggerFactory.getLogger(javaClass)
-
   operator fun invoke(): Behavior<String> =
-    Behaviors.setup {
-      log.info("Setting up word counter (Stateful)")
+    Behaviors.setup { ctx ->
+      ctx.log.info("Setting up word counter (Stateful)")
       var total = 0
 
       // Behaviors.same() // should stop the actor
       return@setup Behaviors.receiveMessage { message ->
         val newCount = message.split(" ").size
         total += newCount
-        log.info("received new message, updated count to $total")
+        ctx.log.info("received new message, updated count to $total")
         return@receiveMessage Behaviors.same()
       }
     }

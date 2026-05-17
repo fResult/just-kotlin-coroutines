@@ -9,8 +9,8 @@ object WordCounterStateless {
   private val log = LoggerFactory.getLogger(javaClass)
 
   operator fun invoke(): Behavior<String> =
-    Behaviors.setup {
-      log.info("Setting up word counter (Stateless)")
+    Behaviors.setup { ctx ->
+      ctx.log.info("Setting up word counter (Stateless)")
       // Behaviors.same()
       return@setup active()
     }

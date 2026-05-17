@@ -1,5 +1,6 @@
 package com.fResult.aktors.lib
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.yield
@@ -13,8 +14,11 @@ internal class Actor<T>(
   private val name: String,
   private val channel: Channel<T>,
   private val job: Job,
+  scope: CoroutineScope,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
+  private val self = ActorRef(channel)
+  private val context = ActorContext(self, name, job, scope)
 
   suspend fun run(startBehavior: Behavior<T>) {
     log.info("Starting actor $name")
@@ -23,7 +27,7 @@ internal class Actor<T>(
     while (true) {
       when (behavior) {
         is Behaviors.Setup -> {
-          newBehavior = behavior.initialization()
+          newBehavior = behavior.initialization(context)
           // if behaviors.same -> stopped behavior
           behavior = newBehavior.ifSameThen(Behaviors.stopped())
         }
