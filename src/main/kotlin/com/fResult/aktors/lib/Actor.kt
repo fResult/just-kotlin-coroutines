@@ -23,7 +23,7 @@ internal class Actor<T>(
   suspend fun run(startBehavior: Behavior<T>) {
     log.info("Starting actor $name")
     var behavior = startBehavior
-    var newBehavior = behavior
+    var newBehavior: Behavior<T>
     while (true) {
       when (behavior) {
         is Behaviors.Setup -> {
@@ -35,16 +35,17 @@ internal class Actor<T>(
         is Behaviors.ReceiveMessage -> {
           val message = channel.receive()
           val handle = behavior.handler
-          newBehavior = handle(message)
+          newBehavior = handle(context, message)
           behavior = newBehavior.ifSameThen(behavior)
         }
 
-        is Behaviors.Same ->
+        is Behaviors.Same -> {
           throw IllegalStateException(
             """
             The INSTANCE 'Behaviors.Same' is illegal, probably a bug in the code
             """.trimIndent(),
           )
+        }
 
         Behaviors.Stopped -> {
           channel.close() // prevent other coroutines from sending new messages

@@ -5,7 +5,13 @@ sealed interface Behavior<in T> {
 }
 
 object Behaviors {
-  fun <T> receiveMessage(handler: (T) -> Behavior<T>): Behavior<T> = ReceiveMessage(handler)
+  fun <T> receiveMessage(handler: (ActorContext<T>, T) -> Behavior<T>): Behavior<T> =
+    ReceiveMessage(handler)
+
+  fun <T> receiveMessage(handler: (T) -> Behavior<T>): Behavior<T> =
+    ReceiveMessage { _, message ->
+      handler(message)
+    }
 
   fun <T> setup(initialization: (ActorContext<T>) -> Behavior<T>) = Setup(initialization)
 
@@ -14,7 +20,7 @@ object Behaviors {
   fun <T> stopped(): Behavior<T> = Stopped
 
   class ReceiveMessage<T>(
-    val handler: (T) -> Behavior<T>,
+    val handler: (ActorContext<T>, T) -> Behavior<T>,
   ) : Behavior<T>
 
   class Setup<T>(
