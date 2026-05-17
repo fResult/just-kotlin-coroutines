@@ -1,6 +1,16 @@
 package com.fResult.aktors.lib
 
-class ActorContext
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineScope
+
+class ActorContext<T>(
+  val self: ActorRef<T>,
+  val name: String,
+  val scope: CoroutineScope,
+  val context: CoroutineContext,
+): ActorScope() {
+  fun <S> spawn(name: String, behavior: Behavior<S>): ActorRef<S> = TODO()
+}
 
 /*
  * data class Command(payload: String, replyTo: ActorRef<T>)
