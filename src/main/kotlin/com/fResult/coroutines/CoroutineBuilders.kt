@@ -2,14 +2,13 @@ package com.fResult.com.fResult.coroutines
 
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.toJavaDuration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.time.delay
 import org.slf4j.LoggerFactory
 
 object CoroutineBuilders {
@@ -17,13 +16,13 @@ object CoroutineBuilders {
 
   suspend fun developer(idx: Int) {
     developerNeedCoffee(idx)
-    delay(Random.nextLong(1000).milliseconds.toJavaDuration()) // can suspend the coroutine
+    delay(Random.nextLong(1000).milliseconds) // can suspend the coroutine
     developerGotCoffee(idx)
   }
 
   suspend fun projectManager() {
     pmCheckProgress()
-    delay(Random.nextLong(1000).milliseconds.toJavaDuration()) // can suspend the coroutine
+    delay(Random.nextLong(1000).milliseconds) // can suspend the coroutine
     pmFinishedCheckingProgress()
   }
 
@@ -75,7 +74,7 @@ object CoroutineBuilders {
     // global scope - for the duration of the entire app
     val dev1Job = GlobalScope.launch { developer(1) }
     val dev2Job = GlobalScope.launch { developer(2) }
-    // easy to  leak resources on GlobalScope
+    // easy to leak resources on GlobalScope
 
     // manually join coroutines
     dev1Job.join() // semantically blocking
@@ -87,7 +86,7 @@ object CoroutineBuilders {
   // async - return a value out of a coroutine
   suspend fun developerCoding(idx: Int): String {
     developerNeedCoffee(idx)
-    delay(Random.nextLong(1000).milliseconds.toJavaDuration()) // can suspend the coroutine
+    delay(Random.nextLong(1000).milliseconds) // can suspend the coroutine
     developerGotCoffee(idx)
 
     return """
@@ -97,7 +96,7 @@ object CoroutineBuilders {
 
   suspend fun projectManagerEstimating(): String {
     pmCheckProgress()
-    delay(Random.nextLong(1000).milliseconds.toJavaDuration()) // can suspend the coroutine
+    delay(Random.nextLong(1000).milliseconds) // can suspend the coroutine
     pmFinishedCheckingProgress()
 
     return "12 Hours"

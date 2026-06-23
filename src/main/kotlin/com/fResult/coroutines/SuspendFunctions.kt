@@ -1,9 +1,8 @@
 package com.fResult.com.fResult.coroutines
 
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.time.delay
 import org.slf4j.LoggerFactory
 
 object SuspendFunctions {
@@ -14,7 +13,7 @@ object SuspendFunctions {
     LOGGER.info("Getting in the bus")
     (0..10).forEach {
       LOGGER.info("{}% done") { it * 10 }
-      delay(0.3.seconds.toJavaDuration()) // yielding point - coroutines that runs this code can be SUSPENDED
+      delay(0.3.seconds) // yielding point - coroutines that runs this code can be SUSPENDED
       // cooperative scheduling
     } // yielding point - coroutine is SUSPENDED
 
@@ -32,7 +31,7 @@ object SuspendFunctions {
       suspendCancellableCoroutine { continuation ->
         LOGGER.info("This runs when I'm suspended")
         continuation.resumeWith(Result.success(42))
-      }
+      } // yielding point - coroutine is SUSPENDED
 
     LOGGER.info("This prints AFTER resuming the coroutine: $resumedComputation")
   }
